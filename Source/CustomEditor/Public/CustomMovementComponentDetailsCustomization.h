@@ -19,6 +19,4 @@ public:
 
 	//Returns a static instance of the Details Panel customization.
 	static TSharedRef<IDetailCustomization> MakeInstance();
-
-	static void SortCustomDetailsCategories(const TMap<FName, IDetailCategoryBuilder*>& AllCategoryMap);
 };

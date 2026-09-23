@@ -43,19 +43,11 @@ void FCustomMovementComponentDetailsCustomization::HideCategoryExcludingProperti
         bool HasMatched = false;
 
         for (int j = 0; j < ExcludedProperties.Num() && !HasMatched; j++) {
-            if (Properties[i].Get().GeneratePathToProperty().EndsWith(ExcludedProperties[j], ESearchCase::CaseSensitive)) HasMatched = true;
+            if (Properties[i].Get().GeneratePathToProperty().Equals(ExcludedProperties[j], ESearchCase::CaseSensitive)) HasMatched = true;
         }
         
         if (!HasMatched) DetailBuilder.HideProperty(Properties[i]);
     }
-}
-
-void FCustomMovementComponentDetailsCustomization::SortCustomDetailsCategories(const TMap<FName, IDetailCategoryBuilder*>& AllCategoryMap) {
-    (*AllCategoryMap.Find(FName("Custom Character Movement|Movement Speed")))->SetSortOrder(0);
-    (*AllCategoryMap.Find(FName("Custom Character Movement|Acceleration & Deceleration")))->SetSortOrder(1);
-    (*AllCategoryMap.Find(FName("Custom Character Movement|Jumping & Gravity")))->SetSortOrder(2);
-    (*AllCategoryMap.Find(FName("Custom Character Movement|Wall Jumping")))->SetSortOrder(3);
-    (*AllCategoryMap.Find(FName("Custom Character Movement|Ledge Mantling")))->SetSortOrder(4);
 }
 
 //Create the static instance of this detail customization needed for registering it in module startup.

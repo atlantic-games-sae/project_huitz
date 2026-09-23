@@ -14,9 +14,6 @@ enum EMovementState : int {
 	/** Walking on a surface. */
 	Walking,
 
-	/** Walking, but faster. */
-	Sprinting,
-
 	/** Walking, but slower + lower. */
 	Crouching,
 
@@ -44,16 +41,20 @@ public:
     UPROPERTY(Category="Custom Movement|Movement Speed", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
 	float WalkingSpeed;
 	UPROPERTY(Category="Custom Movement|Movement Speed", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
-	float SprintingSpeed;
-	UPROPERTY(Category="Custom Movement|Movement Speed", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
 	float CrouchingSpeed;
 	UPROPERTY(Category="Custom Movement|Movement Speed", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
 	float SlideBoost;
 
+	UPROPERTY(Category="Custom Movement|Sliding", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
+	float SlidingThreshold;
+
+	UPROPERTY(Category="Custom Movement|Dashing", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1, Units="Seconds"))
+	float DashLength;
+	UPROPERTY(Category="Custom Movement|Dashing", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
+	float DashVelocity;
+
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float WalkingAcceleration;
-	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
-	float SprintingAcceleration;
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float CrouchingAcceleration;
 
@@ -61,6 +62,8 @@ public:
 	float BrakingDeceleration;
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float SlidingDeceleration;
+	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
+	float FallingDeceleration;
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float MinGroundDeceleration;
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
@@ -82,7 +85,10 @@ public:
     void SetMovementState(EMovementState NewState);
 
     virtual void SetDesiredCrouchState(bool value);
-    virtual void SetDesiredSprintState(bool value);
+
+	virtual void TryWallJump(float CapsuleHalfHeight, float CapsuleRadius);
+
+	virtual void Dash(FVector2D InputDirection);
 
 protected:
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
@@ -96,11 +102,13 @@ private:
 
 	EMovementState MovementState;
 
-	bool DesiredSprintState;
 	bool DesiredCrouchState;
 
 	float* DesiredMaxWalkSpeed;
 	
 	FVector2D SlideDirection;
 	float SlideVelocity;
+
+	float ActiveDashTimer;
+	FVector2D ActiveDashDirection;
 };

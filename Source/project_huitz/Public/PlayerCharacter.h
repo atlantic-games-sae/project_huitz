@@ -44,7 +44,7 @@ public:
 	UInputAction* JumpAction;
 
 	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* SprintAction;
+	UInputAction* DashAction;
 
 	UPROPERTY(Category="Input", EditAnywhere)
 	UInputAction* CrouchAction;
@@ -79,9 +79,10 @@ public:
 	virtual void UnCrouch(bool bClientSimulation = false) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-	void StartSprinting();
-	UFUNCTION(BlueprintCallable, Category = "Movement")
-	void StopSprinting();
+	void Dash();
+
+	UPROPERTY(Category = "Components", EditAnywhere, BlueprintReadOnly)
+	UCustomMovementComponent* MovementComponent;
 
 	FOnHealthChangedSignature OnCurrentHealthChangedDelegate;
 	FOnHealthChangedSignature OnMaxHealthChangedDelegate;
@@ -107,9 +108,13 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UCustomMovementComponent* MovementComponent;
-
 private:
 	void priv_Crouch() { Crouch(); } // private alias for Crouch() that has a void() signature, rather than a void(bool) one, to allow binding it with the Enhanced Input System
 	void priv_UnCrouch() { UnCrouch(); }
+
+	FVector2D CurrentMovementInput;
+
+	void ResetMovementInput() {
+		CurrentMovementInput = FVector2D().ZeroVector;
+	};
 };

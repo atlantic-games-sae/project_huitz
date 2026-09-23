@@ -5,26 +5,29 @@
 
 UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
     MovementState = Falling;
-    DesiredSprintState = false;
     DesiredCrouchState = false;
 
     // Initialising variables
 
-    WalkingSpeed = 475.0f;
-    SprintingSpeed = 750.0f;
-    CrouchingSpeed = 200.0f;
+    WalkingSpeed = 550.0f;
+    CrouchingSpeed = 250.0f;
     SlideBoost = 100.0f;
+
+    SlidingThreshold = 500.0f;
+
+    DashLength = 0.2f;
+    DashVelocity = 1000.0f;
 
     DesiredMaxWalkSpeed = &WalkingSpeed;
 
     WalkingAcceleration = 1100.0f;
-    SprintingAcceleration = 1300.0f;
     CrouchingAcceleration = 850.0f;
 
     BrakingDeceleration = 4000.0f;
     SlidingDeceleration = 300.0f;
+    FallingDeceleration = 300.0f;
     MinGroundDeceleration = 1000.0f;
-    MaxGroundDeceleration = 1600.0f;
+    MaxGroundDeceleration = 1500.0f;
 
     WallJumpAllowedRange = 15.0f;
     WallJumpHorizontalKickStrength = 400.0f;
@@ -35,7 +38,8 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     AirControl = 1.0f;
     bUseSeparateBrakingFriction = true;
     BrakingDecelerationWalking = BrakingDeceleration;
-    BrakingDecelerationFalling = 300.0f;
+    BrakingDecelerationFalling = FallingDeceleration;
+    BrakingFriction = 0.0f;
     bUseFlatBaseForFloorChecks = true;
     SetWalkableFloorAngle(45.0f);
 }
@@ -54,31 +58,35 @@ void UCustomMovementComponent::SetMovementState(EMovementState NewState) {
             MaxAcceleration = WalkingAcceleration;
             BrakingDecelerationWalking = BrakingDeceleration;
             break;
-        case Sprinting:
-            DesiredMaxWalkSpeed = &SprintingSpeed;
-            MaxAcceleration = SprintingAcceleration;
-            BrakingDecelerationWalking = BrakingDeceleration;
-            break;
         case Crouching:
             DesiredMaxWalkSpeed = &CrouchingSpeed;
             MaxAcceleration = CrouchingAcceleration;
             BrakingDecelerationWalking = BrakingDeceleration;
             break;
         case Sliding:
-            MaxWalkSpeed = FMath::Clamp(MaxWalkSpeed + SlideBoost, 0.0f, SprintingSpeed + SlideBoost);
+            MaxWalkSpeed = FMath::Clamp(MaxWalkSpeed + SlideBoost, 0.0f, DashVelocity + SlideBoost);
             DesiredMaxWalkSpeed = new float(0.0f);
             MaxAcceleration = 0.0f;
             BrakingDecelerationWalking = 0.0f;
             SlideDirection = GetHorizontalVelocity().GetSafeNormal();
-            Velocity = FVector(SlideDirection.X, SlideDirection.Y, Velocity.Z) * FMath::Clamp(GetHorizontalVelocity().Length() + SlideBoost, 0.0, SprintingSpeed + SlideBoost);
+            Velocity = FVector(SlideDirection.X, SlideDirection.Y, Velocity.Z) * FMath::Clamp(GetHorizontalVelocity().Length() + SlideBoost, 0.0, DashVelocity + SlideBoost);
             break;
         case Falling:
             if (MovementState == Sliding) {
-                MaxAcceleration = SprintingAcceleration;
+                MaxAcceleration = WalkingAcceleration;
             }
+            break;
+        case Dashing:
+            MaxWalkSpeed = DashVelocity;
+            ActiveDashTimer = DashLength;
+            Velocity = FVector(ActiveDashDirection.X, ActiveDashDirection.Y, 0).GetSafeNormal() * DashVelocity;
+            BrakingDecelerationWalking = 0.0f;
+            GravityScale = 0.0f;
+            break;
         default:
             break;
     }
+    if (NewState != Dashing) GravityScale = 1.0f;
     MovementState = NewState;
 }
 
@@ -88,8 +96,7 @@ void UCustomMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovem
     if (MovementState == Falling && MovementMode == MOVE_Walking) {
         if (DesiredCrouchState) CrouchOrSlideBasedOnHorizontalVelocity();
         else if (GetHorizontalVelocity().Length() > 0.0) {
-            if (DesiredSprintState) SetMovementState(Sprinting);
-            else SetMovementState(Walking);
+            SetMovementState(Walking);
         } else SetMovementState(None);
     }
 
@@ -98,29 +105,35 @@ void UCustomMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovem
     }
 }
 
-void UCustomMovementComponent::SetDesiredSprintState(bool value) {
-    DesiredSprintState = value;
-
-    if (DesiredSprintState == (MovementState == Sprinting)) return;
-
-    if (DesiredSprintState) SetMovementState(Sprinting);
-    else {
-        if (GetHorizontalVelocity().Length() > 0.0) SetMovementState(Walking);
-        else SetMovementState(None);
-    }
-}
-
 void UCustomMovementComponent::SetDesiredCrouchState(bool value) {
     DesiredCrouchState = value;
     if (DesiredCrouchState) {
-        if (MovementState == None || MovementState == Walking) SetMovementState(Crouching);
-        else if (MovementState == Sprinting) SetMovementState(Sliding);
+        if (MovementState == None) SetMovementState(Crouching);
+        else if (MovementState == Walking) CrouchOrSlideBasedOnHorizontalVelocity();
     } else if (MovementState == Crouching || MovementState == Sliding) {
         if (GetHorizontalVelocity().Length() > 0.0) {
-            if (DesiredSprintState) SetMovementState(Sprinting);
-            else SetMovementState(Walking);
+            SetMovementState(Walking);
         } else SetMovementState(None);
     }
+}
+
+void UCustomMovementComponent::TryWallJump(float CapsuleHalfHeight, float CapsuleRadius) {
+    if (MovementState != EMovementState::Falling) return;
+
+    FVector TracePoint = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z - CapsuleHalfHeight / 2.0f);
+    float Radius = CapsuleRadius + WallJumpAllowedRange;
+    FHitResult OutHit;
+    bool bHit = UKismetSystemLibrary::SphereTraceSingle(
+        this, TracePoint, TracePoint, Radius,
+        UEngineTypes::ConvertToTraceType(ECC_Visibility),
+        false, {}, EDrawDebugTrace::None, OutHit, true);
+    if (!bHit) return;
+
+    FVector DistanceFromWallHit = GetOwner()->GetActorLocation() - OutHit.ImpactPoint;
+    FVector2D KickAwayFromWall = FVector2D(DistanceFromWallHit.X, DistanceFromWallHit.Y).GetSafeNormal() * WallJumpHorizontalKickStrength;
+    Velocity = FVector(Velocity.X + KickAwayFromWall.X,
+        Velocity.Y + KickAwayFromWall.Y,
+        JumpZVelocity * WallJumpPercentageOfJumpVelocity);
 }
 
 EMovementState UCustomMovementComponent::GetMovementState() const {
@@ -128,7 +141,7 @@ EMovementState UCustomMovementComponent::GetMovementState() const {
 }
 
 void UCustomMovementComponent::CrouchOrSlideBasedOnHorizontalVelocity() {
-    if ((GetHorizontalVelocity().Length() - WalkingSpeed) > 0.1) SetMovementState(Sliding);
+    if (GetHorizontalVelocity().Length() >= SlidingThreshold) SetMovementState(Sliding);
     else SetMovementState(Crouching);
 }
 
@@ -138,13 +151,19 @@ FVector2D UCustomMovementComponent::GetHorizontalVelocity() const {
 
 void UCustomMovementComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) {
     if (MovementState == None && GetHorizontalVelocity().Length() > 0.0) {
-        if (DesiredSprintState) SetMovementState(Sprinting);
-        else SetMovementState(Walking);
-    } else if ((MovementState == Sprinting || MovementState == Walking) && GetHorizontalVelocity().Length() == 0.0) {
+        SetMovementState(Walking);
+    } else if (MovementState == Walking && GetHorizontalVelocity().Length() == 0.0) {
         SetMovementState(None);
     }
 
-    UpdateMaxWalkSpeed(DeltaTime);
+    if (MovementState == Dashing) {
+        ActiveDashTimer -= DeltaTime;
+        if (DesiredCrouchState) SetMovementState(Sliding);
+        else if (ActiveDashTimer <= 0) {
+            if (MovementMode == MOVE_Falling) SetMovementState(Falling);
+            else SetMovementState(Walking);
+        }
+    } else UpdateMaxWalkSpeed(DeltaTime);
 
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -160,9 +179,6 @@ void UCustomMovementComponent::UpdateMaxWalkSpeed(float DeltaTime) {
             case Walking:
                 MaxDelta = WalkingAcceleration;
                 break;
-            case Sprinting:
-                MaxDelta = SprintingAcceleration;
-                break;
             case Crouching:
                 MaxDelta = CrouchingAcceleration;
                 break;
@@ -170,7 +186,7 @@ void UCustomMovementComponent::UpdateMaxWalkSpeed(float DeltaTime) {
     } else {
         if (MovementState == Sliding) MaxDelta = SlidingDeceleration;
         else if (MovementState != Falling) {
-            MaxDelta = FMath::Lerp(MinGroundDeceleration, MaxGroundDeceleration, UHelperFunctions::GetAlphaInRange(GetHorizontalVelocity().Length(), CrouchingSpeed, SprintingSpeed));
+            MaxDelta = FMath::Lerp(MinGroundDeceleration, MaxGroundDeceleration, UHelperFunctions::GetAlphaInRange(GetHorizontalVelocity().Length(), CrouchingSpeed, WalkingSpeed));
         }
     }
 
@@ -188,4 +204,21 @@ void UCustomMovementComponent::UpdateSlidingVelocity(float DeltaTime) {
         SlideVelocity = UHelperFunctions::FloatMoveTowards(GetHorizontalVelocity().Length(), 0.0f, SlidingDeceleration * DeltaTime);
         Velocity = (FVector(SlideDirection.X, SlideDirection.Y, 0.0) * SlideVelocity) + FVector(0.0, 0.0, Velocity.Z);
     }
+}
+
+void UCustomMovementComponent::Dash(FVector2D InputDirection) {
+    if (InputDirection == FVector2D().ZeroVector) return;
+
+    switch (MovementState) {
+        case Falling:
+            return;
+        case Sliding:
+            return;
+        case Crouching:
+            return;
+    }
+
+    ActiveDashDirection = FVector2D(InputDirection.X, -InputDirection.Y).GetRotated(GetOwner()->GetActorRotation().Yaw + 90.0);
+
+    SetMovementState(Dashing);
 }

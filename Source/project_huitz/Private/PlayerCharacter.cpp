@@ -17,6 +17,8 @@ APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitial
 	MaxHealth = 50;
 	CurrentHealth = 0;
 
+	CurrentMovementInput = FVector2D().ZeroVector;
+
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	CapsuleComponent = GetCapsuleComponent();
@@ -52,7 +54,7 @@ void APlayerCharacter::BeginPlay() {
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value) {
-	FVector2D MovementVector = Value.Get<FVector2D>();
+	CurrentMovementInput = Value.Get<FVector2D>();
 
 	if (Controller == nullptr) return;
 
@@ -63,8 +65,8 @@ void APlayerCharacter::Move(const FInputActionValue& Value) {
 
 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-	AddMovementInput(ForwardDirection, MovementVector.Y, false);
-	AddMovementInput(RightDirection, MovementVector.X, false);
+	AddMovementInput(ForwardDirection, CurrentMovementInput.Y, false);
+	AddMovementInput(RightDirection, CurrentMovementInput.X, false);
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value) {
@@ -75,7 +77,7 @@ void APlayerCharacter::Look(const FInputActionValue& Value) {
 }
 
 void APlayerCharacter::Jump() {
-	EMovementState allowedStates[] = { None, Walking, Sprinting, Sliding };
+	EMovementState allowedStates[] = { None, Walking, Sliding, Dashing };
 	bool shouldJump = false;
 
 	EMovementState MovementState = MovementComponent->GetMovementState();
@@ -84,25 +86,11 @@ void APlayerCharacter::Jump() {
 		if (MovementState == allowedStates[i]) shouldJump = true;
 	}
 
-	if (!shouldJump) { // Wall jumping logic
-		if (MovementState != EMovementState::Falling) return;
-		FVector TracePoint = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z - CapsuleComponent->GetScaledCapsuleHalfHeight() / 2.0f);
-		float Radius = CapsuleComponent->GetScaledCapsuleRadius() + MovementComponent->WallJumpAllowedRange;
-		FHitResult OutHit;
-		bool bHit = UKismetSystemLibrary::SphereTraceSingle(
-			this, TracePoint, TracePoint, Radius,
-			UEngineTypes::ConvertToTraceType(ECC_Visibility),
-			false, {}, EDrawDebugTrace::None, OutHit, true);
-		if (!bHit) return;
-		FVector DistanceFromWallHit = GetActorLocation() - OutHit.ImpactPoint;
-		FVector2D KickAwayFromWall = FVector2D(DistanceFromWallHit.X, DistanceFromWallHit.Y).GetSafeNormal() * MovementComponent->WallJumpHorizontalKickStrength;
-		MovementComponent->Velocity = FVector(MovementComponent->Velocity.X + KickAwayFromWall.X,
-			MovementComponent->Velocity.Y + KickAwayFromWall.Y,
-			MovementComponent->JumpZVelocity * MovementComponent->WallJumpPercentageOfJumpVelocity);
+	if (!shouldJump) MovementComponent->TryWallJump(CapsuleComponent->GetScaledCapsuleHalfHeight(), CapsuleComponent->GetScaledCapsuleRadius());
+	else {
+		Super::Jump();
+		MovementComponent->SetMovementState(EMovementState::Falling);
 	}
-
-	Super::Jump();
-	MovementComponent->SetMovementState(EMovementState::Falling);
 }
 
 // Called to bind functionality to input
@@ -111,6 +99,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &APlayerCharacter::ResetMovementInput);
 
 		EnhancedInputComponent->BindAction(MouseLookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
@@ -118,8 +107,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopJumping);
 
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSprinting);
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprinting);
+		EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Started, this, &APlayerCharacter::Dash);
 
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::priv_Crouch);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::priv_UnCrouch);
@@ -162,10 +150,6 @@ void APlayerCharacter::UnCrouch(bool bClientSimulation) {
     MovementComponent->SetDesiredCrouchState(false);
 }
 
-void APlayerCharacter::StartSprinting() {
-	MovementComponent->SetDesiredSprintState(true);
-}
-
-void APlayerCharacter::StopSprinting() {
-	MovementComponent->SetDesiredSprintState(false);
+void APlayerCharacter::Dash() {
+	MovementComponent->Dash(CurrentMovementInput);
 }
