@@ -49,7 +49,7 @@ public:
 	float SlidingThreshold;
 
 	UPROPERTY(Category="Custom Movement|Dashing", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1, Units="Seconds"))
-	float DashLength;
+	float DashDuration;
 	UPROPERTY(Category="Custom Movement|Dashing", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
 	float DashVelocity;
 
@@ -63,7 +63,9 @@ public:
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float SlidingDeceleration;
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
-	float FallingDeceleration;
+	float MinAirDeceleration;
+	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
+	float MaxAirDeceleration;
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float MinGroundDeceleration;
 	UPROPERTY(Category="Custom Movement|Acceleration & Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
@@ -92,6 +94,10 @@ public:
 
 protected:
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
+
+	bool EnableAirDeceleration;
+
+	bool HasSlideBoosted;
 
 private:
 	inline void CrouchOrSlideBasedOnHorizontalVelocity();

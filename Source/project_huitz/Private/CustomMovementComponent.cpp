@@ -11,11 +11,11 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
 
     WalkingSpeed = 550.0f;
     CrouchingSpeed = 250.0f;
-    SlideBoost = 100.0f;
+    SlideBoost = 450.0f;
 
     SlidingThreshold = 500.0f;
 
-    DashLength = 0.2f;
+    DashDuration = 0.2f;
     DashVelocity = 1000.0f;
 
     DesiredMaxWalkSpeed = &WalkingSpeed;
@@ -24,21 +24,26 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     CrouchingAcceleration = 850.0f;
 
     BrakingDeceleration = 4000.0f;
-    SlidingDeceleration = 300.0f;
-    FallingDeceleration = 300.0f;
-    MinGroundDeceleration = 1000.0f;
-    MaxGroundDeceleration = 1500.0f;
+    SlidingDeceleration = 350.0f;
+    MinAirDeceleration = 10.0f;
+    MaxAirDeceleration = 1000.0f;
+    MinGroundDeceleration = 500.0f;
+    MaxGroundDeceleration = 2250.0f;
 
     WallJumpAllowedRange = 15.0f;
     WallJumpHorizontalKickStrength = 400.0f;
     WallJumpPercentageOfJumpVelocity = 0.9f;
+
+    EnableAirDeceleration = true;
+    HasSlideBoosted = false;
 
     // Any variables inherited from CharacterMovementComponent that have their defaults overriden
     MaxWalkSpeed = WalkingSpeed;
     AirControl = 1.0f;
     bUseSeparateBrakingFriction = true;
     BrakingDecelerationWalking = BrakingDeceleration;
-    BrakingDecelerationFalling = FallingDeceleration;
+    BrakingDecelerationFalling = 0.0f;
+    FallingLateralFriction = 0.0f;
     BrakingFriction = 0.0f;
     bUseFlatBaseForFloorChecks = true;
     SetWalkableFloorAngle(45.0f);
@@ -57,19 +62,24 @@ void UCustomMovementComponent::SetMovementState(EMovementState NewState) {
             DesiredMaxWalkSpeed = &WalkingSpeed;
             MaxAcceleration = WalkingAcceleration;
             BrakingDecelerationWalking = BrakingDeceleration;
+            HasSlideBoosted = false;
             break;
         case Crouching:
             DesiredMaxWalkSpeed = &CrouchingSpeed;
             MaxAcceleration = CrouchingAcceleration;
             BrakingDecelerationWalking = BrakingDeceleration;
+            HasSlideBoosted = false;
             break;
         case Sliding:
-            MaxWalkSpeed = FMath::Clamp(MaxWalkSpeed + SlideBoost, 0.0f, DashVelocity + SlideBoost);
             DesiredMaxWalkSpeed = new float(0.0f);
             MaxAcceleration = 0.0f;
             BrakingDecelerationWalking = 0.0f;
             SlideDirection = GetHorizontalVelocity().GetSafeNormal();
-            Velocity = FVector(SlideDirection.X, SlideDirection.Y, Velocity.Z) * FMath::Clamp(GetHorizontalVelocity().Length() + SlideBoost, 0.0, DashVelocity + SlideBoost);
+            if (!HasSlideBoosted) {
+                MaxWalkSpeed = FMath::Clamp(MaxWalkSpeed + SlideBoost, 0.0f, DashVelocity);
+                Velocity = FVector(SlideDirection.X, SlideDirection.Y, 0) * FMath::Clamp(GetHorizontalVelocity().Length() + SlideBoost, 0.0, DashVelocity);
+                HasSlideBoosted = true;
+            }
             break;
         case Falling:
             if (MovementState == Sliding) {
@@ -78,15 +88,19 @@ void UCustomMovementComponent::SetMovementState(EMovementState NewState) {
             break;
         case Dashing:
             MaxWalkSpeed = DashVelocity;
-            ActiveDashTimer = DashLength;
+            ActiveDashTimer = DashDuration;
             Velocity = FVector(ActiveDashDirection.X, ActiveDashDirection.Y, 0).GetSafeNormal() * DashVelocity;
             BrakingDecelerationWalking = 0.0f;
             GravityScale = 0.0f;
+            EnableAirDeceleration = false;
             break;
         default:
             break;
     }
-    if (NewState != Dashing) GravityScale = 1.0f;
+    if (NewState != Dashing) {
+        GravityScale = 1.0f;
+        if (MovementState != Dashing) EnableAirDeceleration = true;
+    }
     MovementState = NewState;
 }
 
@@ -165,9 +179,16 @@ void UCustomMovementComponent::TickComponent(float DeltaTime, enum ELevelTick Ti
         }
     } else UpdateMaxWalkSpeed(DeltaTime);
 
+    float PreTickHorizontalVelocityLength = FVector2D(Velocity).Length();
+
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
     UpdateSlidingVelocity(DeltaTime);
+
+    if (EnableAirDeceleration && MovementState == Falling) {
+        float AirDeceleration = FMath::Lerp(MinAirDeceleration, MaxAirDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(PreTickHorizontalVelocityLength, WalkingSpeed, DashVelocity)));
+        Velocity = FVector(Velocity.X, Velocity.Y, 0).GetSafeNormal() * UHelperFunctions::FloatMoveTowards(PreTickHorizontalVelocityLength, 0, AirDeceleration * DeltaTime) + FVector(0, 0, Velocity.Z);
+    }
 }
 
 void UCustomMovementComponent::UpdateMaxWalkSpeed(float DeltaTime) {
@@ -186,7 +207,7 @@ void UCustomMovementComponent::UpdateMaxWalkSpeed(float DeltaTime) {
     } else {
         if (MovementState == Sliding) MaxDelta = SlidingDeceleration;
         else if (MovementState != Falling) {
-            MaxDelta = FMath::Lerp(MinGroundDeceleration, MaxGroundDeceleration, UHelperFunctions::GetAlphaInRange(GetHorizontalVelocity().Length(), CrouchingSpeed, WalkingSpeed));
+            MaxDelta = FMath::Lerp(MinGroundDeceleration, MaxGroundDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(GetHorizontalVelocity().Length(), 0, DashVelocity)));
         }
     }
 
@@ -201,8 +222,8 @@ void UCustomMovementComponent::UpdateSlidingVelocity(float DeltaTime) {
 
     if (GetHorizontalVelocity().Length() <= CrouchingSpeed) SetMovementState(Crouching);
     else {
-        SlideVelocity = UHelperFunctions::FloatMoveTowards(GetHorizontalVelocity().Length(), 0.0f, SlidingDeceleration * DeltaTime);
-        Velocity = (FVector(SlideDirection.X, SlideDirection.Y, 0.0) * SlideVelocity) + FVector(0.0, 0.0, Velocity.Z);
+        SlideVelocity = UHelperFunctions::FloatMoveTowards(GetHorizontalVelocity().Length(), 0, SlidingDeceleration * DeltaTime);
+        Velocity = (FVector(SlideDirection.X, SlideDirection.Y, 0) * SlideVelocity) + FVector(0, 0, Velocity.Z);
     }
 }
 
@@ -210,8 +231,6 @@ void UCustomMovementComponent::Dash(FVector2D InputDirection) {
     if (InputDirection == FVector2D().ZeroVector) return;
 
     switch (MovementState) {
-        case Falling:
-            return;
         case Sliding:
             return;
         case Crouching:
