@@ -27,6 +27,8 @@ class PROJECT_HUITZ_API APlayerCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	APlayerCharacter(const class FObjectInitializer& ObjectInitializer);
+	
+	virtual void PossessedBy(AController* NewController) override;
 
 	UPROPERTY(Category="Input", EditAnywhere)
 	UInputMappingContext* DefaultMappingContext;

@@ -4,6 +4,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "CustomMovementComponent.h"
 #include "HelperFunctions.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName)) {
@@ -48,6 +50,19 @@ void APlayerCharacter::BeginPlay() {
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) {
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Hello word"));
+}
+
+void APlayerCharacter::PossessedBy(AController* NewController) {
+	Super::PossessedBy(NewController);
+	
+	if (APlayerController* PlayerController = Cast<APlayerController>(NewController)) {
+		auto LocalPlayer = PlayerController->GetLocalPlayer();
+		if (auto* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer)) {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}

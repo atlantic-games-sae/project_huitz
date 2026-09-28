@@ -9,37 +9,37 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
 
     // Initialising variables
 
-    WalkingSpeed = 550.0f;
+    WalkingSpeed = 600.0f;
     CrouchingSpeed = 250.0f;
-    SlideBoost = 450.0f;
+    SlideBoost = 500.0f;
 
     SlidingThreshold = 500.0f;
 
-    DashDuration = 0.2f;
-    DashVelocity = 1000.0f;
+    DashDuration = 0.18f;
+    DashVelocity = 1200.0f;
 
     DesiredMaxWalkSpeed = &WalkingSpeed;
 
-    WalkingAcceleration = 1100.0f;
+    WalkingAcceleration = 1250.0f;
     CrouchingAcceleration = 850.0f;
 
     BrakingDeceleration = 4000.0f;
-    SlidingDeceleration = 350.0f;
-    MinAirDeceleration = 10.0f;
-    MaxAirDeceleration = 1000.0f;
+    SlidingDeceleration = 450.0f;
+    MinAirDeceleration = 50.0f;
+    MaxAirDeceleration = 850.0f;
     MinGroundDeceleration = 500.0f;
     MaxGroundDeceleration = 2250.0f;
 
-    WallJumpAllowedRange = 15.0f;
-    WallJumpHorizontalKickStrength = 400.0f;
-    WallJumpPercentageOfJumpVelocity = 0.9f;
+    WallJumpAllowedRange = 12.5f;
+    WallJumpHorizontalKickStrength = 300.0f;
+    WallJumpPercentageOfJumpVelocity = 0.85f;
 
     EnableAirDeceleration = true;
     HasSlideBoosted = false;
 
     // Any variables inherited from CharacterMovementComponent that have their defaults overriden
     MaxWalkSpeed = WalkingSpeed;
-    AirControl = 1.0f;
+    AirControl = 0.9f;
     bUseSeparateBrakingFriction = true;
     BrakingDecelerationWalking = BrakingDeceleration;
     BrakingDecelerationFalling = 0.0f;
@@ -114,7 +114,7 @@ void UCustomMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovem
         } else SetMovementState(None);
     }
 
-    if (MovementMode == MOVE_Falling && MovementState != Falling) {
+    if (MovementState != Falling && MovementMode == MOVE_Falling) {
         SetMovementState(Falling);
     }
 }
@@ -185,7 +185,7 @@ void UCustomMovementComponent::TickComponent(float DeltaTime, enum ELevelTick Ti
 
     UpdateSlidingVelocity(DeltaTime);
 
-    if (EnableAirDeceleration && MovementState == Falling) {
+    if (EnableAirDeceleration && MovementState == Falling && PreTickHorizontalVelocityLength > WalkingSpeed) {
         float AirDeceleration = FMath::Lerp(MinAirDeceleration, MaxAirDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(PreTickHorizontalVelocityLength, WalkingSpeed, DashVelocity)));
         Velocity = FVector(Velocity.X, Velocity.Y, 0).GetSafeNormal() * UHelperFunctions::FloatMoveTowards(PreTickHorizontalVelocityLength, 0, AirDeceleration * DeltaTime) + FVector(0, 0, Velocity.Z);
     }

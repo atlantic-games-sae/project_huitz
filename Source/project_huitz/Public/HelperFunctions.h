@@ -10,7 +10,7 @@ class PROJECT_HUITZ_API UHelperFunctions : public UObject {
 
 public:
     UFUNCTION(BlueprintPure, Category = "Helper Functions")
-    static inline float GetAlphaInRange(float Input, float Min, float Max) {
+    static float GetAlphaInRange(float Input, float Min, float Max) {
         float* RealMin;
         float* RealMax;
         if (Min < Max) {
@@ -28,7 +28,7 @@ public:
     }
 
     UFUNCTION(BlueprintPure, Category = "Helper Functions")
-    static inline float FloatMoveTowards(float BaseValue, float TargetValue, float MaxDelta) {
+    static float FloatMoveTowards(float BaseValue, float TargetValue, float MaxDelta) {
         if (BaseValue == TargetValue) return BaseValue;
         if (MaxDelta >= FMath::Abs(BaseValue - TargetValue)) return TargetValue;
         if (TargetValue > BaseValue) return BaseValue + MaxDelta;
