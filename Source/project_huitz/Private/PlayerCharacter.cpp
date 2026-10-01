@@ -6,6 +6,7 @@
 #include "HelperFunctions.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName)) {
@@ -53,8 +54,15 @@ void APlayerCharacter::BeginPlay() {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Hello word"));
+	
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), StaticClass(), FoundActors);
+	FoundActors.Remove(this);
+	for (int i = 0; i < FoundActors.Num(); i++) {
+		APlayerCharacter* TargetActor = Cast<APlayerCharacter>(FoundActors[i]);
+		TargetActor->CapsuleComponent->MoveIgnoreActors.AddUnique(this);
+	}
+	CapsuleComponent->MoveIgnoreActors = FoundActors;
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController) {

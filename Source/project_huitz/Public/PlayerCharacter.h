@@ -88,6 +88,8 @@ public:
 
 	FOnHealthChangedSignature OnCurrentHealthChangedDelegate;
 	FOnHealthChangedSignature OnMaxHealthChangedDelegate;
+	
+	UCapsuleComponent* CapsuleComponent;
 
 protected:
 	// Called when the game starts or when spawned
@@ -100,8 +102,6 @@ protected:
 	bool HasRoomToStand(float IntendedHeightDelta) const;
 
 	int CurrentHealth;
-
-	UCapsuleComponent* CapsuleComponent;
 
 public:	
 	// Called every frame
