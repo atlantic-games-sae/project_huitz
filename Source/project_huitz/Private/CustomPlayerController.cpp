@@ -12,11 +12,6 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Online/OnlineSessionNames.h"
 
-void ACustomPlayerController::BeginPlay() {
-	Super::BeginPlay();
-	Login();
-}
-
 void ACustomPlayerController::Login() {
 	IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
 	IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface();
@@ -49,6 +44,7 @@ void ACustomPlayerController::HandleLoginCompleted(int32 LocalUserNum, bool bWas
 	if (bWasSuccessful) {
 		UE_LOG(LogTemp, Log, TEXT("Login callback completed!"));
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Logged In!"));
+		OnSuccessfulLogin();
 	} else { // Login failed
 		UE_LOG(LogTemp, Warning, TEXT("EOS login failed.")); //Print sign in failure in logs as a warning.
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Failed to Log In"));
@@ -58,7 +54,7 @@ void ACustomPlayerController::HandleLoginCompleted(int32 LocalUserNum, bool bWas
 	LoginDelegateHandle.Reset();
 }
 
-void ACustomPlayerController::CreateLobby(FName KeyName, FString KeyValue) {
+void ACustomPlayerController::CreateLobby(FString KeyValue) {
     IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
     IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
  
@@ -80,7 +76,7 @@ void ACustomPlayerController::CreateLobby(FName KeyName, FString KeyValue) {
     SessionSettings->bUseLobbiesIfAvailable = true; // For P2P we will use a lobby instead of a session
     SessionSettings->bUseLobbiesVoiceChatIfAvailable = true; // We will also enable voice
     SessionSettings->bUsesStats = true; // Needed to keep track of player stats.
-    SessionSettings->Settings.Add(KeyName, FOnlineSessionSetting((KeyValue), EOnlineDataAdvertisementType::ViaOnlineService));
+    SessionSettings->Settings.Add(SearchKey, FOnlineSessionSetting((KeyValue), EOnlineDataAdvertisementType::ViaOnlineService));
  
     UE_LOG(LogTemp, Warning, TEXT("Creating Lobby..."));
     if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Creating Lobby..."));
@@ -99,10 +95,11 @@ void ACustomPlayerController::HandleCreateLobbyCompleted(FName EOSLobbyName, boo
     if (bWasSuccessful) {
         UE_LOG(LogTemp, Warning, TEXT("Lobby: %s Created!"), *EOSLobbyName.ToString());
         if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Lobby Created!!"));
-        FString Map = "Game/Content/ThirdPerson/Maps/ThirdPersonMap?listen"; //Hardcoding map name here, should be passed by parameter
+        FString Map = "Game/Content/TestingLevels/MovementGym?listen"; // TODO: remove hardcoded map file location
         FURL TravelURL;
         TravelURL.Map = Map;
         GetWorld()->Listen(TravelURL);
+    	OnLobbyCreated();
     } else {
         UE_LOG(LogTemp, Warning, TEXT("Failed to create lobby!"));
         if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Failed to create Lobby!"));
@@ -113,7 +110,7 @@ void ACustomPlayerController::HandleCreateLobbyCompleted(FName EOSLobbyName, boo
     CreateLobbyDelegateHandle.Reset();
 }
 
-void ACustomPlayerController::FindLobby(FName SearchKey, FString SearchValue) { // Put default value for example
+void ACustomPlayerController::FindLobby(FString SearchValue) { // Put default value for example
     IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
     IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
     TSharedRef<FOnlineSessionSearch> Search = MakeShared<FOnlineSessionSearch>();
@@ -121,7 +118,7 @@ void ACustomPlayerController::FindLobby(FName SearchKey, FString SearchValue) { 
     // Remove the default search parameters that FOnlineSessionSearch sets up.
     Search->QuerySettings.SearchParams.Empty();
  
-    Search->QuerySettings.Set(SearchKey, SearchValue, EOnlineComparisonOp::Equals); // Seach using our Key/Value pair
+    Search->QuerySettings.Set(SearchKey, SearchValue, EOnlineComparisonOp::Equals); // Search using our Key/Value pair
     Search->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
     UE_LOG(LogTemp, Warning, TEXT("Finding lobby."));
 	if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Finding lobby!"));
@@ -164,7 +161,8 @@ void ACustomPlayerController::HandleFindLobbyCompleted(bool bWasSuccessful, TSha
             // For this course we will join the first session found automatically. Usually you would loop through all the sessions and determine which one is best to join. 
             break;
         }
-        JoinLobby();  
+    	OnLobbyFound();
+        JoinLobby();
     } else {
         UE_LOG(LogTemp, Warning, TEXT("Find lobby failed."));
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("No lobbies found!"));
@@ -207,6 +205,7 @@ void ACustomPlayerController::HandleJoinLobbyCompleted(FName SessionName, EOnJoi
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, TEXT("Joined lobby!"));
 
 		ClientTravel(ConnectString, TRAVEL_Absolute);
+		OnLobbyJoined();
 	}
  
 	// Clear our handle and reset the delegate. 

@@ -17,5 +17,5 @@ AMultiplayerGameMode::AMultiplayerGameMode() {
 void AMultiplayerGameMode::BeginPlay() {
 	Super::BeginPlay();
 	
-	UGameplayStatics::CreatePlayer(GetWorld());
+	// UGameplayStatics::CreatePlayer(GetWorld());
 }

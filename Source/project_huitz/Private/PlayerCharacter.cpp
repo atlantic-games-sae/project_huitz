@@ -92,19 +92,23 @@ void APlayerCharacter::Look(const FInputActionValue& Value) {
 }
 
 void APlayerCharacter::Jump() {
-	EMovementState allowedStates[] = { None, Walking, Sliding, Dashing };
-	bool shouldJump = false;
+	EMovementState AllowedStates[] = { EMovementState::None, EMovementState::Walking, EMovementState::Sliding, EMovementState::Dashing };
+	bool bCanJump = false;
 
 	EMovementState MovementState = MovementComponent->GetMovementState();
 
-	for (int i = 0; i < sizeof(allowedStates); i++) {
-		if (MovementState == allowedStates[i]) shouldJump = true;
+	for (int i = 0; i < sizeof(AllowedStates); i++) {
+		if (MovementState == AllowedStates[i]) bCanJump = true;
 	}
 
-	if (!shouldJump) MovementComponent->TryWallJump(CapsuleComponent->GetScaledCapsuleHalfHeight(), CapsuleComponent->GetScaledCapsuleRadius());
-	else {
+	if (bCanJump) {
 		Super::Jump();
 		MovementComponent->SetMovementState(EMovementState::Falling);
+	} else if (MovementState == EMovementState::Falling) {
+		if (!MovementComponent->TryWallJump(CapsuleComponent->GetScaledCapsuleHalfHeight(), CapsuleComponent->GetScaledCapsuleRadius()) && JumpCurrentCount < JumpMaxCount) {
+			Super::Jump();
+			MovementComponent->SetMovementState(EMovementState::Falling);
+		}
 	}
 }
 
@@ -139,10 +143,10 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 void APlayerCharacter::AdjustHeight(float DeltaTime) {
 	EMovementState MovementState = MovementComponent->GetMovementState();
-	if (MovementState != Crouching && MovementState != Sliding && !HasRoomToStand(HeightTransitionSpeed * DeltaTime)) return;
+	if (MovementState != EMovementState::Crouching && MovementState != EMovementState::Sliding && !HasRoomToStand(HeightTransitionSpeed * DeltaTime)) return;
 	float TargetHeight = CharacterHeight;
-	if (MovementState == Crouching) TargetHeight *= CrouchingHeightPercentage;
-	else if (MovementState == Sliding) TargetHeight *= SlidingHeightPercentage;
+	if (MovementState == EMovementState::Crouching) TargetHeight *= CrouchingHeightPercentage;
+	else if (MovementState == EMovementState::Sliding) TargetHeight *= SlidingHeightPercentage;
 	CapsuleComponent->SetCapsuleHalfHeight(UHelperFunctions::FloatMoveTowards(CapsuleComponent->GetScaledCapsuleHalfHeight(), TargetHeight / 2.0f, (HeightTransitionSpeed / 2.0f) * DeltaTime));
 }
 

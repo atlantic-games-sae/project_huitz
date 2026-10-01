@@ -16,7 +16,8 @@ public class project_huitz : ModuleRules
 			"EnhancedInput",
 			"OnlineSubsystem",
 			"OnlineSubsystemUtils",
-			"OnlineSubsystemEOS"
+			"OnlineSubsystemEOS",
+			"NetCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
