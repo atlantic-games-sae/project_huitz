@@ -1,3 +1,4 @@
+#include "CustomMovementComponentDetailsCustomization.h"
 #include "Widgets/SWidget.h"
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
@@ -5,7 +6,6 @@
 #include "Widgets/Text/STextBlock.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "CustomMovementComponent.h"
-#include "CustomMovementComponentDetailsCustomization.h"
 
 void FCustomMovementComponentDetailsCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
