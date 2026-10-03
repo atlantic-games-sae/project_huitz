@@ -7,7 +7,7 @@
 class APlayerCharacter;
 
 UENUM(BlueprintType)
-enum EMovementState : int {
+enum class EMovementState : uint8 {
     /** Standing on a surface with no velocity, not crouched. */
 	None,
 
@@ -35,8 +35,10 @@ class UCustomMovementComponent : public UCharacterMovementComponent {
 
 public:
     virtual void BeginPlay() override;
-
-    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+	
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
     UPROPERTY(Category="Custom Movement|Movement Speed", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
 	float WalkingSpeed;
@@ -84,37 +86,69 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Custom Movement")
 	FVector2D GetHorizontalVelocity() const;
 
+	UFUNCTION(NetMulticast, Reliable)
     void SetMovementState(EMovementState NewState);
 
     virtual void SetDesiredCrouchState(bool value);
 
-	virtual void TryWallJump(float CapsuleHalfHeight, float CapsuleRadius);
+	virtual bool TryWallJump(float CapsuleHalfHeight, float CapsuleRadius);
 
 	virtual void Dash(FVector2D InputDirection);
 
 protected:
+	virtual void PerformMovement(float DeltaTime) override;
+	
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
 
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Custom Movement|Acceleration & Deceleration")
 	bool EnableAirDeceleration;
 
+	UPROPERTY(Replicated)
 	bool HasSlideBoosted;
+	
+	UPROPERTY(Replicated)
+	EMovementState CustomMovementState;
+	
+	void PerformDash(FVector2D InputDirection);
+	
+	UFUNCTION(Server, Reliable)
+	void SetVelocity_Server(FVector NewVelocity);
+	void SetVelocity_Server_Implementation(FVector NewVelocity) { Velocity = NewVelocity; }
+	
+	UPROPERTY(Replicated)
+	FVector2D ActiveDashDirection;
 
 private:
-	inline void CrouchOrSlideBasedOnHorizontalVelocity();
+	UFUNCTION(Server, Reliable)
+	void PerformDash_Server(FVector2D InputDirection);
+	void PerformDash_Server_Implementation(FVector2D InputDirection) { PerformDash(InputDirection); }
+	
+	UFUNCTION(Server, Reliable)
+	void SetDesiredCrouchState_Server(bool value);
+	void SetDesiredCrouchState_Server_Implementation(bool value) { SetDesiredCrouchState(value); }
+	
+	UFUNCTION(Server, Reliable)
+	void CrouchOrSlideBasedOnHorizontalVelocity();
 
 	void UpdateMaxWalkSpeed(float DeltaTime);
 
 	void UpdateSlidingVelocity(float DeltaTime);
 
-	EMovementState MovementState;
-
+	UPROPERTY(ReplicatedUsing=OnRep_DesiredCrouchState)
 	bool DesiredCrouchState;
-
-	float* DesiredMaxWalkSpeed;
 	
+	UFUNCTION()
+	void OnRep_DesiredCrouchState() { OnDesiredCrouchStateChanged(); }
+	
+	void OnDesiredCrouchStateChanged();
+	
+	UPROPERTY(Replicated)
+	float DesiredMaxWalkSpeed;
+	
+	UPROPERTY(Replicated)
 	FVector2D SlideDirection;
+	
 	float SlideVelocity;
 
 	float ActiveDashTimer;
-	FVector2D ActiveDashDirection;
 };
