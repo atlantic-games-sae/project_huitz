@@ -44,49 +44,102 @@ void ACustomPlayerController::HandleLoginCompleted(int32 LocalUserNum, bool bWas
 	if (bWasSuccessful) {
 		UE_LOG(LogTemp, Log, TEXT("Login callback completed!"));
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Logged In!"));
-		OnSuccessfulLogin();
+		OnSuccessfulLogin.Broadcast();
 	} else { // Login failed
 		UE_LOG(LogTemp, Warning, TEXT("EOS login failed.")); //Print sign in failure in logs as a warning.
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Failed to Log In"));
+		OnFailedLogin.Broadcast();
 	}
 
 	Identity->ClearOnLoginCompleteDelegate_Handle(LocalUserNum, LoginDelegateHandle);
 	LoginDelegateHandle.Reset();
 }
 
-void ACustomPlayerController::CreateLobby(FString KeyValue) {
+void ACustomPlayerController::CreateLobby(FString LobbyId) {
+	if (bLobbySearchActive) return;
+	
+	if (LobbyId == FString("")) {
+		UE_LOG(LogTemp, Warning, TEXT("LobbyId cannot be empty string."));
+		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("LobbyId cannot be empty string."));
+		return;
+	}
+	
+	DesiredLobbyId = LobbyId;
+	
     IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
     IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
+	TSharedRef<FOnlineSessionSearch> Search = MakeShared<FOnlineSessionSearch>();
  
-    CreateLobbyDelegateHandle =
-        Session->AddOnCreateSessionCompleteDelegate_Handle(FOnCreateSessionCompleteDelegate::CreateUObject(
-            this,
-            &ThisClass::HandleCreateLobbyCompleted));
+	// Remove the default search parameters that FOnlineSessionSearch sets up.
+	Search->QuerySettings.SearchParams.Empty();
+ 
+	Search->QuerySettings.Set(SearchKey, DesiredLobbyId, EOnlineComparisonOp::Equals); // Search using our Key/Value pair
+	Search->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
 	
-    // These are the settings for the lobby
-    TSharedRef<FOnlineSessionSettings> SessionSettings = MakeShared<FOnlineSessionSettings>();
-    SessionSettings->NumPublicConnections = 2; // We will test our sessions with 2 players to keep things simple
-    SessionSettings->bShouldAdvertise = true; // This creates a public match and will be searchable.
-    SessionSettings->bUsesPresence = false;   // No presence on dedicated server. This requires a local user.
-    SessionSettings->bAllowJoinViaPresence = false;
-    SessionSettings->bAllowJoinViaPresenceFriendsOnly = false;
-    SessionSettings->bAllowInvites = false;    // Allow inviting players into session. This requires presence and a local user. 
-    SessionSettings->bAllowJoinInProgress = false; // Once the session is started, no one can join.
-    SessionSettings->bIsDedicated = false; // Session created on dedicated server.
-    SessionSettings->bUseLobbiesIfAvailable = true; // For P2P we will use a lobby instead of a session
-    SessionSettings->bUseLobbiesVoiceChatIfAvailable = true; // We will also enable voice
-    SessionSettings->bUsesStats = true; // Needed to keep track of player stats.
-    SessionSettings->Settings.Add(SearchKey, FOnlineSessionSetting((KeyValue), EOnlineDataAdvertisementType::ViaOnlineService));
+	FindLobbiesDelegateHandle = Session->AddOnFindSessionsCompleteDelegate_Handle(
+        FOnFindSessionsCompleteDelegate::CreateUObject(
+            this,
+            &ThisClass::HandlePreCreateLobbyCheckCompleted,
+            Search));
+	
+	bLobbySearchActive = true;
  
-    UE_LOG(LogTemp, Warning, TEXT("Creating Lobby..."));
-    if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Creating Lobby..."));
- 
-    if (!Session->CreateSession(0, LobbyName, *SessionSettings)) {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to create Lobby!"));
-        if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Failed to create Lobby!"));
-    }
+	if (!Session->FindSessions(0, Search)) {
+		CreateLobby_Internal();
+		Session->ClearOnFindSessionsCompleteDelegate_Handle(FindLobbiesDelegateHandle);
+		FindLobbiesDelegateHandle.Reset();
+	}
 }
- 
+
+void ACustomPlayerController::HandlePreCreateLobbyCheckCompleted(bool bWasSuccessful, TSharedRef<FOnlineSessionSearch> Search) {
+	IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
+	IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
+	if (!bWasSuccessful) CreateLobby_Internal();
+	else {
+		if (Search->SearchResults.Num() == 0) CreateLobby_Internal();
+	}
+	
+	bLobbySearchActive = false;
+	
+	Session->ClearOnFindSessionsCompleteDelegate_Handle(FindLobbiesDelegateHandle);
+	FindLobbiesDelegateHandle.Reset();
+}
+
+void ACustomPlayerController::CreateLobby_Internal() {
+	IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
+	IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
+	CreateLobbyDelegateHandle =
+		Session->AddOnCreateSessionCompleteDelegate_Handle(FOnCreateSessionCompleteDelegate::CreateUObject(
+			this,
+			&ThisClass::HandleCreateLobbyCompleted));
+	
+	// These are the settings for the lobby
+	TSharedRef<FOnlineSessionSettings> SessionSettings = MakeShared<FOnlineSessionSettings>();
+	SessionSettings->NumPublicConnections = 2; // We will test our sessions with 2 players to keep things simple
+	SessionSettings->bShouldAdvertise = true; // This creates a public match and will be searchable.
+	SessionSettings->bUsesPresence = false;   // No presence on dedicated server. This requires a local user.
+	SessionSettings->bAllowJoinViaPresence = false;
+	SessionSettings->bAllowJoinViaPresenceFriendsOnly = false;
+	SessionSettings->bAllowInvites = false;    // Allow inviting players into session. This requires presence and a local user. 
+	SessionSettings->bAllowJoinInProgress = false; // Once the session is started, no one can join.
+	SessionSettings->bIsDedicated = false; // Session created on dedicated server.
+	SessionSettings->bUseLobbiesIfAvailable = true; // For P2P we will use a lobby instead of a session
+	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true; // We will also enable voice
+	SessionSettings->bUsesStats = true; // Needed to keep track of player stats.
+	SessionSettings->Settings.Add(SearchKey, FOnlineSessionSetting((DesiredLobbyId), EOnlineDataAdvertisementType::ViaOnlineService));
+		
+	UE_LOG(LogTemp, Warning, TEXT("Creating Lobby..."));
+	if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Creating Lobby..."));
+	 
+	if (!Session->CreateSession(0, LobbyName, *SessionSettings)) {
+		UE_LOG(LogTemp, Warning, TEXT("Failed to create Lobby!"));
+		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Failed to create Lobby!"));
+		
+		Session->ClearOnCreateSessionCompleteDelegate_Handle(CreateLobbyDelegateHandle);
+		CreateLobbyDelegateHandle.Reset();
+	}
+}
+
 void ACustomPlayerController::HandleCreateLobbyCompleted(FName EOSLobbyName, bool bWasSuccessful) {
     // This is called once our lobby is created
  
@@ -99,7 +152,7 @@ void ACustomPlayerController::HandleCreateLobbyCompleted(FName EOSLobbyName, boo
         FURL TravelURL;
         TravelURL.Map = Map;
         GetWorld()->Listen(TravelURL);
-    	OnLobbyCreated();
+    	OnLobbyCreated.Broadcast();
     } else {
         UE_LOG(LogTemp, Warning, TEXT("Failed to create lobby!"));
         if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Failed to create Lobby!"));
@@ -110,7 +163,9 @@ void ACustomPlayerController::HandleCreateLobbyCompleted(FName EOSLobbyName, boo
     CreateLobbyDelegateHandle.Reset();
 }
 
-void ACustomPlayerController::FindLobby(FString SearchValue) { // Put default value for example
+void ACustomPlayerController::FindLobbies(FString LobbyIdSearch) { // Put default value for example
+	if (bLobbySearchActive) return;
+	
     IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
     IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
     TSharedRef<FOnlineSessionSearch> Search = MakeShared<FOnlineSessionSearch>();
@@ -118,20 +173,23 @@ void ACustomPlayerController::FindLobby(FString SearchValue) { // Put default va
     // Remove the default search parameters that FOnlineSessionSearch sets up.
     Search->QuerySettings.SearchParams.Empty();
  
-    Search->QuerySettings.Set(SearchKey, SearchValue, EOnlineComparisonOp::Equals); // Search using our Key/Value pair
+	// Search using our input if it is not an empty string, otherwise search for all lobbies
+	if (LobbyIdSearch != FString("")) Search->QuerySettings.Set(SearchKey, LobbyIdSearch, EOnlineComparisonOp::Equals);
+	
     Search->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
-    UE_LOG(LogTemp, Warning, TEXT("Finding lobby."));
-	if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Finding lobby!"));
+    UE_LOG(LogTemp, Display, TEXT("Finding lobby..."));
+	if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Finding lobby..."));
     
     FindLobbiesDelegateHandle = Session->AddOnFindSessionsCompleteDelegate_Handle(
     	FOnFindSessionsCompleteDelegate::CreateUObject(
             this,
-            &ThisClass::HandleFindLobbyCompleted,
+            &ThisClass::HandleFindLobbiesCompleted,
             Search));
  
+	bLobbySearchActive = true;
     if (!Session->FindSessions(0, Search)) {
-        UE_LOG(LogTemp, Warning, TEXT("Finding lobby failed."));
-        if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Finding lobby failed!"));
+        //UE_LOG(LogTemp, Warning, TEXT("Finding lobby failed."));
+        //if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Finding lobby failed."));
 
         // Clear our handle and reset the delegate. 
         Session->ClearOnFindSessionsCompleteDelegate_Handle(FindLobbiesDelegateHandle);
@@ -139,41 +197,110 @@ void ACustomPlayerController::FindLobby(FString SearchValue) { // Put default va
     }
 }
  
-void ACustomPlayerController::HandleFindLobbyCompleted(bool bWasSuccessful, TSharedRef<FOnlineSessionSearch> Search) {
+void ACustomPlayerController::HandleFindLobbiesCompleted(bool bWasSuccessful, TSharedRef<FOnlineSessionSearch> Search) {
     IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
     IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
  
-    if (bWasSuccessful) {
-        // Added code here to not run into issues when searching for sessions is successful, but the number of sessions is 0
-        if (Search->SearchResults.Num() == 0) {
-			UE_LOG(LogTemp, Warning, TEXT("No lobbies found."));
-			if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("No lobbies found!"));
-            return; 
-        }
-
-        UE_LOG(LogTemp, Warning, TEXT("Found lobby."));
+    if (bWasSuccessful && Search->SearchResults.Num() > 0) {
+    	UE_LOG(LogTemp, Warning, TEXT("Search results cleared"));
+    	LobbySearchResultsRows.Empty(); // Clear search results arrays
+    	
         for (auto SessionInSearchResult : Search->SearchResults) {
+        	FString LobbyId = SessionInSearchResult.Session.SessionSettings.Settings.Find(SearchKey)->Data.ToString();
+        	FString DisplayName = SessionInSearchResult.Session.OwningUserName;
+        	
+        	UE_LOG(LogTemp, Display, TEXT("LobbyId: %s, OwnerName: %s"), *LobbyId, *DisplayName);
+        	
+        	FString ConnectStringTemp;
             // Ensure the connection string is resolvable and store the info in ConnectString and in SessionToJoin
-            if (Session->GetResolvedConnectString(SessionInSearchResult, NAME_GamePort, ConnectString)) {
-                SessionToJoin = &SessionInSearchResult; 
+            if (Session->GetResolvedConnectString(SessionInSearchResult, NAME_GamePort, ConnectStringTemp) && DisplayName != "") {
+            	ULobbySearchResultsRow* RowObject = NewObject<ULobbySearchResultsRow>(this);
+            	RowObject->Initialize(LobbyId, DisplayName);
+            	LobbySearchResultsRows.Add(RowObject);
             }
- 
-            // For this course we will join the first session found automatically. Usually you would loop through all the sessions and determine which one is best to join. 
-            break;
         }
-    	OnLobbyFound();
-        JoinLobby();
     } else {
         UE_LOG(LogTemp, Warning, TEXT("Find lobby failed."));
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("No lobbies found!"));
     }
  
-    // Clear our handle and reset the delegate. 
+	bLobbySearchActive = false;
+	OnLobbySearchComplete.Broadcast();
+	
+    // Clear our handle and reset the delegate.
     Session->ClearOnFindSessionsCompleteDelegate_Handle(FindLobbiesDelegateHandle);
     FindLobbiesDelegateHandle.Reset();
 }
 
-void ACustomPlayerController::JoinLobby() {
+void ACustomPlayerController::JoinLobby(int LobbyIndexToJoin) {
+	if (LobbyIndexToJoin < 0 || LobbyIndexToJoin >= LobbySearchResultsRows.Num()) return;
+	
+	FindLobbyToJoin(LobbyIndexToJoin);
+}
+
+void ACustomPlayerController::FindLobbyToJoin(int LobbyIndexToJoin) {
+	if (bLobbySearchActive) return;
+	
+	IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
+	IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
+	TSharedRef<FOnlineSessionSearch> Search = MakeShared<FOnlineSessionSearch>();
+ 
+	// Remove the default search parameters that FOnlineSessionSearch sets up.
+	Search->QuerySettings.SearchParams.Empty();
+
+	Search->QuerySettings.Set(SearchKey, LobbySearchResultsRows[LobbyIndexToJoin]->LobbyId, EOnlineComparisonOp::Equals);
+	Search->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
+	
+	//UE_LOG(LogTemp, Display, TEXT("Finding lobby..."));
+	//if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Finding lobby..."));
+    
+	FindLobbiesDelegateHandle = Session->AddOnFindSessionsCompleteDelegate_Handle(
+		FOnFindSessionsCompleteDelegate::CreateUObject(
+			this,
+			&ThisClass::HandleFindLobbyToJoinCompleted,
+			Search));
+ 
+	bLobbySearchActive = true;
+	if (!Session->FindSessions(0, Search)) {
+		//UE_LOG(LogTemp, Warning, TEXT("Finding lobby failed."));
+		//if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Finding lobby failed."));
+
+		// Clear our handle and reset the delegate. 
+		Session->ClearOnFindSessionsCompleteDelegate_Handle(FindLobbiesDelegateHandle);
+		FindLobbiesDelegateHandle.Reset();
+	}
+}
+
+void ACustomPlayerController::HandleFindLobbyToJoinCompleted(bool bWasSuccessful, TSharedRef<FOnlineSessionSearch> Search) {
+	IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
+	IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
+ 
+	if (bWasSuccessful) {
+		if (Search->SearchResults.Num() == 0) {
+			UE_LOG(LogTemp, Warning, TEXT("No lobbies found."));
+			if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("No lobbies found!"));
+		} else {
+			UE_LOG(LogTemp, Warning, TEXT("Found lobby."));
+			for (auto SessionInSearchResult : Search->SearchResults) {
+				// Ensure the connection string is resolvable and store the info in ConnectString and in LobbyToJoin
+				if (Session->GetResolvedConnectString(SessionInSearchResult, NAME_GamePort, ConnectString)) {
+					LobbyToJoin = &SessionInSearchResult;
+					JoinLobby_Internal();
+					break;
+				}
+			}
+		}
+	} else {
+		UE_LOG(LogTemp, Warning, TEXT("Find lobby failed."));
+		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("No lobbies found!"));
+	}
+ 
+	// Clear our handle and reset the delegate. 
+	Session->ClearOnFindSessionsCompleteDelegate_Handle(FindLobbiesDelegateHandle);
+	FindLobbiesDelegateHandle.Reset();
+}
+
+void ACustomPlayerController::JoinLobby_Internal() {
 	IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());
 	IOnlineSessionPtr Session = Subsystem->GetSessionInterface();
  
@@ -184,12 +311,12 @@ void ACustomPlayerController::JoinLobby() {
 
 	UE_LOG(LogTemp, Warning, TEXT("Joining Lobby."));
 	if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Joining Lobby!"));
-
-	if (!Session->JoinSession(0, "SessionName", *SessionToJoin)) {
+	
+	if (!Session->JoinSession(0, "SessionName", *LobbyToJoin)) {
 		UE_LOG(LogTemp, Warning, TEXT("Join Lobby failed."));
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("Join Lobby failed!"));
 
-		// Clear our handle and reset the delegate. 
+		// Clear our handle and reset the delegate.
 		Session->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionDelegateHandle);
 		JoinSessionDelegateHandle.Reset();
 	}
@@ -205,7 +332,7 @@ void ACustomPlayerController::HandleJoinLobbyCompleted(FName SessionName, EOnJoi
 		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, TEXT("Joined lobby!"));
 
 		ClientTravel(ConnectString, TRAVEL_Absolute);
-		OnLobbyJoined();
+		OnLobbyJoined.Broadcast();
 	}
  
 	// Clear our handle and reset the delegate. 
