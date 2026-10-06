@@ -15,9 +15,10 @@
 
 #include "PlayerCharacter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, int, Health);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, float, Health);
 
 class UCustomMovementComponent;
+class UPlayerAttackComponent;
 
 UCLASS()
 class PROJECT_HUITZ_API APlayerCharacter : public ACharacter
@@ -52,44 +53,45 @@ public:
 	UInputAction* CrouchAction;
 
 	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* PrimaryFireAction;
+	UInputAction* PrimaryAttackAction;
 
 	UPROPERTY(Category="Input", EditAnywhere)
 	UInputAction* ReloadAction;
 
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ForceUnits="Centimeters"))
+	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="Centimeters"))
 	float CharacterHeight;
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ClampMax="0.5", UIMax="0.5"))
+	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=0.5, UIMax=0.5))
 	float CapsuleRadiusProportionalToHeight;
 
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ClampMax="1", UIMax="1"))
+	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
 	float CrouchingHeightPercentage;
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ClampMax="1", UIMax="1"))
+	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
 	float SlidingHeightPercentage;
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ForceUnits="CentimetersPerSecond"))
+	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
 	float HeightTransitionSpeed;
 
-	UPROPERTY(Category="General", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
-	int MaxHealth;
+	UPROPERTY(Category="General", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0))
+	float MaxHealth;
 
-	UPROPERTY(Category = "Components", EditAnywhere)
-	UCameraComponent* Camera = nullptr;
+	UPROPERTY(Category="Components", EditAnywhere)
+	UCameraComponent* Camera;
 
 	virtual void Jump() override;
 
 	virtual void Crouch(bool bClientSimulation = false) override;
 	virtual void UnCrouch(bool bClientSimulation = false) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, Category="Movement")
 	void Dash();
 
-	UPROPERTY(Category = "Components", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category="Components", EditAnywhere, BlueprintReadOnly)
 	UCustomMovementComponent* MovementComponent;
+	
+	UPROPERTY(Category="Components", EditAnywhere, BlueprintReadOnly)
+	UPlayerAttackComponent* AttackComponent;
 
 	FOnHealthChangedSignature OnCurrentHealthChangedDelegate;
 	FOnHealthChangedSignature OnMaxHealthChangedDelegate;
-	
-	UCapsuleComponent* CapsuleComponent;
 
 protected:
 	// Called when the game starts or when spawned
@@ -101,7 +103,7 @@ protected:
 	void AdjustHeight(float DeltaTime);
 	bool HasRoomToStand(float IntendedHeightDelta) const;
 
-	int CurrentHealth;
+	float CurrentHealth;
 
 public:	
 	// Called every frame

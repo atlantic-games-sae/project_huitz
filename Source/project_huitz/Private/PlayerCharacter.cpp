@@ -4,6 +4,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "CustomMovementComponent.h"
 #include "HelperFunctions.h"
+#include "PlayerAttackComponent.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -17,32 +18,33 @@ APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitial
     SlidingHeightPercentage = 0.35f;
     HeightTransitionSpeed = 750.0f;
 
-	MaxHealth = 50;
-	CurrentHealth = 0;
+	MaxHealth = 50.0f;
+	CurrentHealth = 0.0f;
 
 	CurrentMovementInput = FVector2D().ZeroVector;
 
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	CapsuleComponent = GetCapsuleComponent();
-	CapsuleComponent->SetCapsuleHalfHeight(CharacterHeight / 2.0f);
-	CapsuleComponent->SetCapsuleRadius(CharacterHeight * CapsuleRadiusProportionalToHeight);
-	CapsuleComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	GetCapsuleComponent()->SetCapsuleHalfHeight(CharacterHeight / 2.0f);
+	GetCapsuleComponent()->SetCapsuleRadius(CharacterHeight * CapsuleRadiusProportionalToHeight);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
 	MovementComponent = static_cast<UCustomMovementComponent*>(GetCharacterMovement());
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
-	Camera->SetupAttachment(CapsuleComponent);
-	Camera->SetRelativeLocation(FVector(0,0,CapsuleComponent->GetScaledCapsuleHalfHeight() / 2.0));
+	Camera->SetupAttachment(GetCapsuleComponent());
+	Camera->SetRelativeLocation(FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight() / 2.0));
 	Camera->bUsePawnControlRotation = true;
+	
+	AttackComponent = CreateDefaultSubobject<UPlayerAttackComponent>(FName("AttackComponent"));
 }
 
 // Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay() {
 	OnMaxHealthChangedDelegate.Broadcast(MaxHealth);
 
-	CapsuleComponent->SetCapsuleHalfHeight(CharacterHeight / 2.0f);
-	CapsuleComponent->SetCapsuleRadius(CharacterHeight / 5.65f);
+	GetCapsuleComponent()->SetCapsuleHalfHeight(CharacterHeight / 2.0f);
+	GetCapsuleComponent()->SetCapsuleRadius(CharacterHeight / 5.65f);
 
 	CurrentHealth = MaxHealth;
 	OnCurrentHealthChangedDelegate.Broadcast(CurrentHealth);
@@ -60,9 +62,9 @@ void APlayerCharacter::BeginPlay() {
 	FoundActors.Remove(this);
 	for (int i = 0; i < FoundActors.Num(); i++) {
 		APlayerCharacter* TargetActor = Cast<APlayerCharacter>(FoundActors[i]);
-		TargetActor->CapsuleComponent->MoveIgnoreActors.AddUnique(this);
+		TargetActor->GetCapsuleComponent()->MoveIgnoreActors.AddUnique(this);
 	}
-	CapsuleComponent->MoveIgnoreActors = FoundActors;
+	GetCapsuleComponent()->MoveIgnoreActors = FoundActors;
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController) {
@@ -113,7 +115,7 @@ void APlayerCharacter::Jump() {
 		Super::Jump();
 		MovementComponent->SetMovementState(EMovementState::Falling);
 	} else if (MovementState == EMovementState::Falling) {
-		if (!MovementComponent->TryWallJump(CapsuleComponent->GetScaledCapsuleHalfHeight(), CapsuleComponent->GetScaledCapsuleRadius()) && JumpCurrentCount < JumpMaxCount) {
+		if (!MovementComponent->TryWallJump(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), GetCapsuleComponent()->GetScaledCapsuleRadius()) && JumpCurrentCount < JumpMaxCount) {
 			Super::Jump();
 			MovementComponent->SetMovementState(EMovementState::Falling);
 		}
@@ -138,6 +140,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::priv_Crouch);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::priv_UnCrouch);
+	
+		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Started, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputDown);
+		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Completed, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputReleased);
 	}
 }
 
@@ -155,15 +160,15 @@ void APlayerCharacter::AdjustHeight(float DeltaTime) {
 	float TargetHeight = CharacterHeight;
 	if (MovementState == EMovementState::Crouching) TargetHeight *= CrouchingHeightPercentage;
 	else if (MovementState == EMovementState::Sliding) TargetHeight *= SlidingHeightPercentage;
-	CapsuleComponent->SetCapsuleHalfHeight(UHelperFunctions::FloatMoveTowards(CapsuleComponent->GetScaledCapsuleHalfHeight(), TargetHeight / 2.0f, (HeightTransitionSpeed / 2.0f) * DeltaTime));
+	GetCapsuleComponent()->SetCapsuleHalfHeight(UHelperFunctions::FloatMoveTowards(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHeight / 2.0f, (HeightTransitionSpeed / 2.0f) * DeltaTime));
 }
 
 bool APlayerCharacter::HasRoomToStand(float IntendedHeightDelta) const {
-	FVector Start = GetActorLocation() + FVector(0,0,CapsuleComponent->GetScaledCapsuleHalfHeight());
+	FVector Start = GetActorLocation() + FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
 	FVector End = Start + FVector(0,0,IntendedHeightDelta);
 	FHitResult OutHit;
 	bool bHit = UKismetSystemLibrary::SphereTraceSingle(
-		this, Start, End, CapsuleComponent->GetScaledCapsuleRadius(),
+		this, Start, End, GetCapsuleComponent()->GetScaledCapsuleRadius(),
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false, {}, EDrawDebugTrace::None, OutHit, true);
 	return !bHit;
