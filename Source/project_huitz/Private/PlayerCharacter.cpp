@@ -5,11 +5,11 @@
 #include "CustomMovementComponent.h"
 #include "HelperFunctions.h"
 #include "PlayerAttackComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
-// Sets default values
 APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName)) {
 	CharacterHeight = 190.0f;
 	CapsuleRadiusProportionalToHeight = 0.15f;
@@ -18,16 +18,13 @@ APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitial
     SlidingHeightPercentage = 0.35f;
     HeightTransitionSpeed = 750.0f;
 
-	MaxHealth = 50.0f;
-	CurrentHealth = 0.0f;
+	MaxHealth = 100.0f;
+	CurrentHealth = MaxHealth;
 
 	CurrentMovementInput = FVector2D().ZeroVector;
-
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	
 	GetCapsuleComponent()->SetCapsuleHalfHeight(CharacterHeight / 2.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(CharacterHeight * CapsuleRadiusProportionalToHeight);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
 	MovementComponent = static_cast<UCustomMovementComponent*>(GetCharacterMovement());
 
@@ -39,22 +36,35 @@ APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitial
 	AttackComponent = CreateDefaultSubobject<UPlayerAttackComponent>(FName("AttackComponent"));
 }
 
-// Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay() {
-	OnMaxHealthChangedDelegate.Broadcast(MaxHealth);
-
 	GetCapsuleComponent()->SetCapsuleHalfHeight(CharacterHeight / 2.0f);
-	GetCapsuleComponent()->SetCapsuleRadius(CharacterHeight / 5.65f);
-
-	CurrentHealth = MaxHealth;
-	OnCurrentHealthChangedDelegate.Broadcast(CurrentHealth);
-
+	GetCapsuleComponent()->SetCapsuleRadius(CharacterHeight * CapsuleRadiusProportionalToHeight);
+	
 	Super::BeginPlay();
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) {
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
+		
+		UPlayerHUD* InstancedHUDWidget = CreateWidget<UPlayerHUD, APlayerController*>(PlayerController, PlayerHUDWidgetClass);
+		InstancedHUDWidget->OnCurrentHealthChanged(CurrentHealth);
+		InstancedHUDWidget->OnMaxHealthChanged(MaxHealth);
+		
+		OnMaxHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxHealthChanged);
+		OnCurrentHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentHealthChanged);
+		
+		if (UGun* AsGun = Cast<UGun>(AttackComponent->ActiveWeapon)) {
+			InstancedHUDWidget->OnMaxAmmoChanged(AsGun->AmmoPerClip);
+			InstancedHUDWidget->OnCurrentAmmoChanged(AsGun->AmmoRemainingInClip);
+			InstancedHUDWidget->OnActiveWeaponChanged(true);
+		}
+		
+		AttackComponent->OnMaxAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxAmmoChanged);
+		AttackComponent->OnCurrentAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentAmmoChanged);
+		AttackComponent->OnActiveWeaponChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnActiveWeaponChanged);
+		
+		InstancedHUDWidget->AddToPlayerScreen();
 	}
 	
 	TArray<AActor*> FoundActors;

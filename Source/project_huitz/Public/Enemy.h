@@ -3,29 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CustomCharacterBase.h"
 #include "GameFramework/Character.h"
 #include "Enemy.generated.h"
 
 UCLASS()
-class PROJECT_HUITZ_API AEnemy : public ACharacter {
+class PROJECT_HUITZ_API AEnemy : public ACustomCharacterBase {
 	GENERATED_BODY()
-
-public:
-	AEnemy();
-	
-	UFUNCTION(BlueprintCallable)
-	virtual void TakeDamage(float DamageTaken);
-	
-protected:
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnDamageTaken(float DamageTaken);
-	
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnDeath();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxHealth = 25.0f;
-	
-	UPROPERTY(BlueprintReadWrite)
-	float CurrentHealth = MaxHealth;
 };

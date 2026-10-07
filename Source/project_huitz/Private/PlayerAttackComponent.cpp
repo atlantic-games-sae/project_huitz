@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "PlayerAttackComponent.h"
-
 #include "Enemy.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -27,6 +26,7 @@ void UPlayerAttackComponent::PerformAttack() {
 			{}, EDrawDebugTrace::ForDuration, OutHit, true);
 		
 		AsGun->AmmoRemainingInClip--;
+		OnCurrentAmmoChangedDelegate.Broadcast(AsGun->AmmoRemainingInClip);
 		
 		if (AsGun->AmmoRemainingInClip == 0) PerformReload();
 		
@@ -49,7 +49,7 @@ void UPlayerAttackComponent::PerformReload() {
 	}
 }
 
-void UPlayerAttackComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
+void UPlayerAttackComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
 	if (ActiveCooldown > 0.0f) ActiveCooldown -= DeltaTime;
@@ -58,7 +58,11 @@ void UPlayerAttackComponent::TickComponent(float DeltaTime, enum ELevelTick Tick
 	
 	if (ActiveCooldown <= 0.0f) {
 		if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
-			if (AsGun->bIsReloading) AsGun->AmmoRemainingInClip = AsGun->AmmoPerClip;
+			if (AsGun->bIsReloading) {
+				AsGun->AmmoRemainingInClip = AsGun->AmmoPerClip;
+				OnCurrentAmmoChangedDelegate.Broadcast(AsGun->AmmoRemainingInClip);
+				AsGun->bIsReloading = false;
+			}
 			
 			if (AsGun->bIsAutomatic && bIsPrimaryAttackInputHeld) PerformAttack();
 		}
@@ -76,6 +80,15 @@ void UPlayerAttackComponent::EquipWeapon(int WeaponIndex) {
 	if (WeaponIndex < 0 || WeaponIndex >= OwnedWeapons.Num()) return;
 	
 	ActiveWeapon = NewObject<UWeapon>(this, OwnedWeapons[WeaponIndex]);
+	
+	bool bDoesWeaponUseAmmo = false;
+	
+	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
+		bDoesWeaponUseAmmo = true;
+		OnMaxAmmoChangedDelegate.Broadcast(AsGun->AmmoPerClip);
+	}
+	
+	OnActiveWeaponChangedDelegate.Broadcast(bDoesWeaponUseAmmo);
 }
 
 void UPlayerAttackComponent::OnPrimaryAttackInputDown() {

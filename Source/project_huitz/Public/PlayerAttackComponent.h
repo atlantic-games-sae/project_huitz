@@ -7,6 +7,9 @@
 #include "Components/ActorComponent.h"
 #include "PlayerAttackComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIntValueChangedSignature, int, Value);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActiveWeaponChangedSignature, bool, bDoesWeaponUseAmmo);
+
 UCLASS(Blueprintable)
 class UWeapon : public UObject {
 	GENERATED_BODY()
@@ -119,7 +122,11 @@ public:
 	virtual void OnPrimaryAttackInputDown();
 	virtual void OnPrimaryAttackInputReleased();
 	
-	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	FOnIntValueChangedSignature OnCurrentAmmoChangedDelegate;
+	FOnIntValueChangedSignature OnMaxAmmoChangedDelegate;
+	FOnActiveWeaponChangedSignature OnActiveWeaponChangedDelegate;
+	
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 protected:
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnPrimaryAttackInputDown")
