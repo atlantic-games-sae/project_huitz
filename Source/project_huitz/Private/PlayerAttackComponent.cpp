@@ -72,8 +72,8 @@ void UPlayerAttackComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 void UPlayerAttackComponent::GiveNewWeapon(TSubclassOf<UWeapon> NewWeapon, bool bShouldEquipWeapon) {
 	if (OwnedWeapons.Contains(NewWeapon)) return;
 	
-	OwnedWeapons.Add(NewWeapon);
-	if (bShouldEquipWeapon) EquipWeapon(OwnedWeapons.Num() - 1);
+	int WeaponIndex = OwnedWeapons.Add(NewWeapon);
+	if (bShouldEquipWeapon) EquipWeapon(WeaponIndex);
 }
 
 void UPlayerAttackComponent::EquipWeapon(int WeaponIndex) {

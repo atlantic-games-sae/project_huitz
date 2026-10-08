@@ -21,7 +21,7 @@
 class UCustomMovementComponent;
 class UPlayerAttackComponent;
 
-UCLASS()
+UCLASS(Abstract)
 class PROJECT_HUITZ_API APlayerCharacter : public ACustomCharacterBase {
 	GENERATED_BODY()
 
@@ -106,7 +106,7 @@ private:
 
 	FVector2D CurrentMovementInput;
 
-	void ResetMovementInput() {
+	void ClearMovementInput() {
 		CurrentMovementInput = FVector2D().ZeroVector;
-	};
+	}
 };

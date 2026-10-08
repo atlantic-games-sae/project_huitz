@@ -7,7 +7,7 @@
 #include "GameFramework/Character.h"
 #include "Enemy.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class PROJECT_HUITZ_API AEnemy : public ACustomCharacterBase {
 	GENERATED_BODY()
 };

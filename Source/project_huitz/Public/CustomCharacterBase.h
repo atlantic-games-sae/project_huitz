@@ -8,7 +8,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFloatValueChangedSignature, float, Value);
 
-UCLASS()
+UCLASS(Abstract)
 class PROJECT_HUITZ_API ACustomCharacterBase : public ACharacter {
 	GENERATED_BODY()
 

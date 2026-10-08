@@ -10,7 +10,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIntValueChangedSignature, int, Value);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActiveWeaponChangedSignature, bool, bDoesWeaponUseAmmo);
 
-UCLASS(Blueprintable)
+UCLASS(Abstract)
 class UWeapon : public UObject {
 	GENERATED_BODY()
 	
@@ -35,12 +35,12 @@ public:
 	UStaticMesh* StaticMesh;
 };
 
-UCLASS()
+UCLASS(Abstract)
 class UMeleeWeapon : public UWeapon {
 	GENERATED_BODY()
 };
 
-UCLASS()
+UCLASS(Abstract)
 class URangedWeapon : public UWeapon {
 	GENERATED_BODY()
 	
@@ -66,7 +66,7 @@ public:
 	float DamageFalloffMultiplier = 0.5f;
 };
 
-UCLASS()
+UCLASS(Abstract, Blueprintable)
 class UBow : public URangedWeapon {
 	GENERATED_BODY()
 	
@@ -76,7 +76,7 @@ public:
 	float TimeToMaxCharge = 1.0f;
 };
 
-UCLASS()
+UCLASS(Abstract, Blueprintable)
 class UGun : public URangedWeapon {
 	GENERATED_BODY()
 	
