@@ -33,6 +33,8 @@ APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitial
 	Camera->SetRelativeLocation(FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight() / 2.0));
 	Camera->bUsePawnControlRotation = true;
 	
+	InteractionComponent = CreateDefaultSubobject<UPlayerInteractionComponent>(FName(TEXT("Interaction Component")));
+	
 	AttackComponent = CreateDefaultSubobject<UPlayerAttackComponent>(FName("AttackComponent"));
 }
 
@@ -150,6 +152,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::priv_Crouch);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::priv_UnCrouch);
+		
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, InteractionComponent, &UPlayerInteractionComponent::OnInteractInputDown);
 	
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Started, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputDown);
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Completed, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputReleased);

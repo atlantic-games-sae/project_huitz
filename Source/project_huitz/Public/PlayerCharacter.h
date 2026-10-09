@@ -13,10 +13,13 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
 #include "InputActionValue.h"
+#include "PlayerInteractionComponent.h"
 #include "PlayerHUD.h"
 #include "Blueprint/UserWidget.h"
 
 #include "PlayerCharacter.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, int, Health);
 
 class UCustomMovementComponent;
 class UPlayerAttackComponent;
@@ -72,6 +75,9 @@ protected:
 
 	UPROPERTY(Category="Input", EditAnywhere)
 	UInputAction* ReloadAction;
+	
+	UPROPERTY(Category="Input", EditAnywhere)
+	UInputAction* InteractAction;
 
 	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, Units="Centimeters"))
 	float CharacterHeight;
@@ -90,6 +96,9 @@ protected:
 	
 	UPROPERTY(Category="Components", EditAnywhere, BlueprintReadOnly)
 	UPlayerAttackComponent* AttackComponent;
+	
+	UPROPERTY(Category="Components", EditAnywhere, BlueprintReadOnly)
+	UPlayerInteractionComponent* InteractionComponent;
 	
 	UPROPERTY(Category="UI", EditAnywhere, BlueprintReadOnly, DisplayName="Player HUD Widget Class")
 	TSubclassOf<UPlayerHUD> PlayerHUDWidgetClass = UPlayerHUD::StaticClass();
