@@ -12,6 +12,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
 #include "InputActionValue.h"
+#include "PlayerInteractionComponent.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -56,6 +57,9 @@ public:
 
 	UPROPERTY(Category="Input", EditAnywhere)
 	UInputAction* ReloadAction;
+	
+	UPROPERTY(Category="Input", EditAnywhere)
+	UInputAction* InteractAction;
 
 	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ForceUnits="Centimeters"))
 	float CharacterHeight;
@@ -90,6 +94,9 @@ public:
 	FOnHealthChangedSignature OnMaxHealthChangedDelegate;
 	
 	UCapsuleComponent* CapsuleComponent;
+	
+	UPROPERTY(Category="Components", EditAnywhere, BlueprintReadOnly)
+	UPlayerInteractionComponent* InteractionComponent;
 
 protected:
 	// Called when the game starts or when spawned

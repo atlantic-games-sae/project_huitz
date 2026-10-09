@@ -35,6 +35,8 @@ APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitial
 	Camera->SetupAttachment(CapsuleComponent);
 	Camera->SetRelativeLocation(FVector(0,0,CapsuleComponent->GetScaledCapsuleHalfHeight() / 2.0));
 	Camera->bUsePawnControlRotation = true;
+	
+	InteractionComponent = CreateDefaultSubobject<UPlayerInteractionComponent>(FName(TEXT("Interaction Component")));
 }
 
 // Called when the game starts or when spawned
@@ -59,8 +61,9 @@ void APlayerCharacter::BeginPlay() {
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), StaticClass(), FoundActors);
 	FoundActors.Remove(this);
 	for (int i = 0; i < FoundActors.Num(); i++) {
-		APlayerCharacter* TargetActor = Cast<APlayerCharacter>(FoundActors[i]);
-		TargetActor->CapsuleComponent->MoveIgnoreActors.AddUnique(this);
+		if (APlayerCharacter* TargetActor = Cast<APlayerCharacter>(FoundActors[i])) {
+			TargetActor->CapsuleComponent->MoveIgnoreActors.AddUnique(this);
+		}
 	}
 	CapsuleComponent->MoveIgnoreActors = FoundActors;
 }
@@ -138,6 +141,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::priv_Crouch);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::priv_UnCrouch);
+		
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, InteractionComponent, &UPlayerInteractionComponent::OnInteractInputDown);
 	}
 }
 
