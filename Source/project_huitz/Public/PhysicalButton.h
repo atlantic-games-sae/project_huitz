@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "InteractableObject.h"
+#include "ReactToTriggerInterface.h"
 #include "PhysicalButton.generated.h"
 
 UCLASS(Abstract)
@@ -14,4 +15,8 @@ public:
 	APhysicalButton();
 	
 	virtual void Interact(UPlayerInteractionComponent* SourceComponent) override;
+	
+	/** Objects must implement the ReactToTrigger interface, otherwise nothing will happen */
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
+	TArray<AActor*> ActorsToTrigger;
 };

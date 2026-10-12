@@ -17,7 +17,10 @@ public class project_huitz : ModuleRules
 			"OnlineSubsystem",
 			"OnlineSubsystemUtils",
 			"OnlineSubsystemEOS",
-			"NetCore"
+			"NetCore",
+			"AIModule", 
+			"StateTreeModule",
+			"GameplayStateTreeModule"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

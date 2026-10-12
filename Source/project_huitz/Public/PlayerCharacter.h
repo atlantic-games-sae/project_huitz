@@ -3,119 +3,103 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-
-#include "Components/CapsuleComponent.h"
+#include "CustomCharacterBase.h"
 #include "Camera/CameraComponent.h"
-
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
 #include "InputActionValue.h"
 #include "PlayerInteractionComponent.h"
-
+#include "PlayerHUD.h"
 #include "PlayerCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, int, Health);
 
 class UCustomMovementComponent;
+class UPlayerAttackComponent;
 
-UCLASS()
-class PROJECT_HUITZ_API APlayerCharacter : public ACharacter
-{
+UCLASS(Abstract)
+class PROJECT_HUITZ_API APlayerCharacter : public ACustomCharacterBase {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	APlayerCharacter(const class FObjectInitializer& ObjectInitializer);
+	APlayerCharacter(const FObjectInitializer& ObjectInitializer);
 	
 	virtual void PossessedBy(AController* NewController) override;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputMappingContext* DefaultMappingContext;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* MoveAction;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* MouseLookAction;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* LookAction;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* JumpAction;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* DashAction;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* CrouchAction;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* PrimaryFireAction;
-
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* ReloadAction;
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
-	UPROPERTY(Category="Input", EditAnywhere)
-	UInputAction* InteractAction;
-
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ForceUnits="Centimeters"))
-	float CharacterHeight;
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ClampMax="0.5", UIMax="0.5"))
-	float CapsuleRadiusProportionalToHeight;
-
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ClampMax="1", UIMax="1"))
-	float CrouchingHeightPercentage;
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ClampMax="1", UIMax="1"))
-	float SlidingHeightPercentage;
-	UPROPERTY(Category="Height", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ForceUnits="CentimetersPerSecond"))
-	float HeightTransitionSpeed;
-
-	UPROPERTY(Category="General", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
-	int MaxHealth;
-
-	UPROPERTY(Category = "Components", EditAnywhere)
-	UCameraComponent* Camera = nullptr;
+	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
+	UCameraComponent* Camera;
 
 	virtual void Jump() override;
 
 	virtual void Crouch(bool bClientSimulation = false) override;
 	virtual void UnCrouch(bool bClientSimulation = false) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Movement")
+	UFUNCTION(BlueprintCallable, Category="Movement")
 	void Dash();
-
-	UPROPERTY(Category = "Components", EditAnywhere, BlueprintReadOnly)
+	
+	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
+	UPlayerAttackComponent* AttackComponent;
+	
+	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
 	UCustomMovementComponent* MovementComponent;
-
-	FOnHealthChangedSignature OnCurrentHealthChangedDelegate;
-	FOnHealthChangedSignature OnMaxHealthChangedDelegate;
 	
-	UCapsuleComponent* CapsuleComponent;
-	
-	UPROPERTY(Category="Components", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
 	UPlayerInteractionComponent* InteractionComponent;
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputMappingContext* DefaultMappingContext;
+	
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* MoveAction;
 
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* MouseLookAction;
+
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* LookAction;
+
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* JumpAction;
+
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* DashAction;
+
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* CrouchAction;
+
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* PrimaryAttackAction;
+
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* ReloadAction;
+	
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* InteractAction;
+
+	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, Units="Centimeters"))
+	float CharacterHeight;
+	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, ClampMax=0.5, UIMax=0.5))
+	float CapsuleRadiusProportionalToHeight;
+
+	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
+	float CrouchingHeightPercentage;
+	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
+	float SlidingHeightPercentage;
+	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
+	float HeightTransitionSpeed;
+	
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 
 	void AdjustHeight(float DeltaTime);
 	bool HasRoomToStand(float IntendedHeightDelta) const;
-
-	int CurrentHealth;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	UPROPERTY(Category="UI", EditDefaultsOnly, BlueprintReadOnly, DisplayName="Player HUD Widget Class")
+	TSubclassOf<UPlayerHUD> PlayerHUDWidgetClass = UPlayerHUD::StaticClass();
 
 private:
 	void priv_Crouch() { Crouch(); } // private alias for Crouch() that has a void() signature, rather than a void(bool) one, to allow binding it with the Enhanced Input System
@@ -123,7 +107,7 @@ private:
 
 	FVector2D CurrentMovementInput;
 
-	void ResetMovementInput() {
+	void ClearMovementInput() {
 		CurrentMovementInput = FVector2D().ZeroVector;
-	};
+	}
 };
