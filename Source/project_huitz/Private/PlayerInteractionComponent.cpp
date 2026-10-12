@@ -17,8 +17,15 @@ UPlayerInteractionComponent::UPlayerInteractionComponent() {
 
 void UPlayerInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (bCanInteract) TargetInteractableObject = PerformInteractionTrace();
+	
+	if (bCanInteract) {
+		AInteractableObject* NewTargetInteractable = PerformInteractionTrace();
+		if (NewTargetInteractable != TargetInteractableObject) {
+			if (TargetInteractableObject != nullptr) TargetInteractableObject->StaticMeshComponent->SetOverlayMaterial(nullptr);
+			TargetInteractableObject = NewTargetInteractable;
+			if (TargetInteractableObject != nullptr) TargetInteractableObject->StaticMeshComponent->SetOverlayMaterial(TargetHighlightMaterial);
+		}
+	}
 }
 
 TObjectPtr<AInteractableObject> UPlayerInteractionComponent::PerformInteractionTrace() const {

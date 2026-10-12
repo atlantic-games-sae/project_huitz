@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "CustomCharacterBase.h"
-#include "GameFramework/Character.h"
 #include "Enemy.generated.h"
 
-UCLASS(Abstract)
+UCLASS()
 class PROJECT_HUITZ_API AEnemy : public ACustomCharacterBase {
 	GENERATED_BODY()
+	
+public:
+	AEnemy(const FObjectInitializer& ObjectInitializer);
 };

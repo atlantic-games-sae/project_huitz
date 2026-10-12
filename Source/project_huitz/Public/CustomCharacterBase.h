@@ -21,6 +21,12 @@ public:
 	FOnFloatValueChangedSignature OnCurrentHealthChangedDelegate;
 	FOnFloatValueChangedSignature OnMaxHealthChangedDelegate;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0))
+	float MaxHealth;
+	
+	UPROPERTY(BlueprintReadOnly)
+	float CurrentHealth;
+	
 protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnDamageTaken(float DamageTaken);
@@ -29,10 +35,4 @@ protected:
 	
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnDeath")
 	void OnDeath_Event();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0))
-	float MaxHealth;
-	
-	UPROPERTY(BlueprintReadOnly)
-	float CurrentHealth;
 };

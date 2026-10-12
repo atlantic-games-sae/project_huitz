@@ -49,6 +49,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bCanHeadshot = true;
 	
+	/** What the damage dealt by a headshot should be multiplied by, compared to a regular attack */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin=1, UIMin=1))
+	float HeadshotMultiplier = 2.0f;
+	
 	/** Whether the weapon's attacks should deal less damage against distant targets */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bHasDamageFalloff = true;
@@ -94,8 +98,6 @@ public:
 	/** How long the player must wait in order to reload this gun */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, Units="Seconds"))
 	float TimeTakenToReload = 1.0f;
-	
-	float bIsReloading = false;
 };
 
 UCLASS(Blueprintable)
@@ -122,6 +124,8 @@ public:
 	virtual void OnPrimaryAttackInputDown();
 	virtual void OnPrimaryAttackInputReleased();
 	
+	virtual void OnReloadInputDown();
+	
 	FOnIntValueChangedSignature OnCurrentAmmoChangedDelegate;
 	FOnIntValueChangedSignature OnMaxAmmoChangedDelegate;
 	FOnActiveWeaponChangedSignature OnActiveWeaponChangedDelegate;
@@ -129,6 +133,9 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bDebugAttackTraces;
+	
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnPrimaryAttackInputDown")
 	void OnPrimaryAttackInputDown_Event();
 	
@@ -145,8 +152,5 @@ protected:
 	bool bIsPrimaryAttackInputHeld;
 	
 	float ActiveCooldown = 0.0f;
-	
-	APlayerCharacter* GetPlayerCharacter() const {
-		return static_cast<APlayerCharacter*>(GetOwner());
-	}
+	float bIsReloading = false;
 };

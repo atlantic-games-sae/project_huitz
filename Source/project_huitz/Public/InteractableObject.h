@@ -17,10 +17,10 @@ public:
 	
 	virtual void Interact(UPlayerInteractionComponent* SourceComponent);
 	
+	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
+	UStaticMeshComponent* StaticMeshComponent;
+	
 protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnInteract(UPlayerInteractionComponent* SourceComponent);
-	
-	UPROPERTY(Category="Components", EditAnywhere, BlueprintReadOnly)
-	UStaticMeshComponent* StaticMeshComponent;
 };

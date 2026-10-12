@@ -33,6 +33,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	bool bDebugInteractTrace;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterialInterface* TargetHighlightMaterial;
+	
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AInteractableObject> TargetInteractableObject;
 	

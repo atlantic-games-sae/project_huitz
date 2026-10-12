@@ -17,13 +17,16 @@ void UPlayerAttackComponent::BeginPlay() {
 void UPlayerAttackComponent::PerformAttack() {
 	OnPerformAttack();
 	
+	EDrawDebugTrace::Type DrawDebugTrace = bDebugAttackTraces ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
-		FVector TraceEnd = GetPlayerCharacter()->Camera->GetForwardVector() * ActiveWeapon->Range;
+		UCameraComponent* Camera = GetOwner()->GetComponentByClass<UCameraComponent>();
+		FVector TraceEnd = Camera->GetForwardVector() * ActiveWeapon->Range;
 		FHitResult OutHit;
 		bool bHit = UKismetSystemLibrary::LineTraceSingle(
-			this, GetPlayerCharacter()->Camera->GetComponentLocation(), TraceEnd,
+			this, Camera->GetComponentLocation(), TraceEnd,
 			UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
-			{}, EDrawDebugTrace::ForDuration, OutHit, true);
+			{}, DrawDebugTrace, OutHit, true);
 		
 		AsGun->AmmoRemainingInClip--;
 		OnCurrentAmmoChangedDelegate.Broadcast(AsGun->AmmoRemainingInClip);
@@ -45,7 +48,7 @@ void UPlayerAttackComponent::PerformAttack() {
 void UPlayerAttackComponent::PerformReload() {
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 		ActiveCooldown = AsGun->TimeTakenToReload;
-		AsGun->bIsReloading = true;
+		bIsReloading = true;
 	}
 }
 
@@ -58,10 +61,10 @@ void UPlayerAttackComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	
 	if (ActiveCooldown <= 0.0f) {
 		if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
-			if (AsGun->bIsReloading) {
+			if (bIsReloading) {
 				AsGun->AmmoRemainingInClip = AsGun->AmmoPerClip;
 				OnCurrentAmmoChangedDelegate.Broadcast(AsGun->AmmoRemainingInClip);
-				AsGun->bIsReloading = false;
+				bIsReloading = false;
 			}
 			
 			if (AsGun->bIsAutomatic && bIsPrimaryAttackInputHeld) PerformAttack();
@@ -108,4 +111,12 @@ void UPlayerAttackComponent::OnPrimaryAttackInputReleased() {
 	OnPrimaryAttackInputReleased_Event();
 	
 	bIsPrimaryAttackInputHeld = false;
+}
+
+void UPlayerAttackComponent::OnReloadInputDown() {
+	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
+		if (AsGun->AmmoRemainingInClip < AsGun->AmmoPerClip) {
+			PerformReload();
+		}
+	}
 }

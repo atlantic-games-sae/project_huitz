@@ -20,3 +20,7 @@ void AEnemySpawner::OnEnemyDestroyed(AActor* DestroyedActor) {
 		ActiveEnemies.Remove(AsEnemy);
 	}
 }
+
+void AEnemySpawner::OnTrigger_Implementation() {
+	SpawnEnemy();
+}

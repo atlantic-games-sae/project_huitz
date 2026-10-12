@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Enemy.h"
+#include "ReactToTriggerInterface.h"
 #include "EnemySpawner.generated.h"
 
-UCLASS(Abstract)
-class PROJECT_HUITZ_API AEnemySpawner : public AActor {
+UCLASS()
+class PROJECT_HUITZ_API AEnemySpawner : public AActor, public IReactToTrigger {
 	GENERATED_BODY()
 	
 public:
@@ -25,4 +26,6 @@ public:
 	
 	UFUNCTION()
 	void OnEnemyDestroyed(AActor* DestroyedActor);
+	
+	virtual void OnTrigger_Implementation() override;
 };

@@ -3,14 +3,17 @@
 #include "PlayerCharacter.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "CustomMovementComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "HelperFunctions.h"
 #include "PlayerAttackComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/CapsuleComponent.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
-APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName)) {
+APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName)) {
 	CharacterHeight = 190.0f;
 	CapsuleRadiusProportionalToHeight = 0.15f;
 
@@ -33,7 +36,7 @@ APlayerCharacter::APlayerCharacter(const class FObjectInitializer& ObjectInitial
 	Camera->SetRelativeLocation(FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight() / 2.0));
 	Camera->bUsePawnControlRotation = true;
 	
-	InteractionComponent = CreateDefaultSubobject<UPlayerInteractionComponent>(FName(TEXT("Interaction Component")));
+	InteractionComponent = CreateDefaultSubobject<UPlayerInteractionComponent>(FName("InteractionComponent"));
 	
 	AttackComponent = CreateDefaultSubobject<UPlayerAttackComponent>(FName("AttackComponent"));
 }
@@ -43,12 +46,25 @@ void APlayerCharacter::BeginPlay() {
 	GetCapsuleComponent()->SetCapsuleRadius(CharacterHeight * CapsuleRadiusProportionalToHeight);
 	
 	Super::BeginPlay();
+	
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), StaticClass(), FoundActors);
+	FoundActors.Remove(this);
+	for (int i = 0; i < FoundActors.Num(); i++) {
+		APlayerCharacter* TargetActor = Cast<APlayerCharacter>(FoundActors[i]);
+		TargetActor->GetCapsuleComponent()->MoveIgnoreActors.AddUnique(this);
+	}
+	GetCapsuleComponent()->MoveIgnoreActors = FoundActors;
+}
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) {
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
+void APlayerCharacter::PossessedBy(AController* NewController) {
+	Super::PossessedBy(NewController);
+	
+	if (APlayerController* PlayerController = Cast<APlayerController>(NewController)) {
+		ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
+		if (auto* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer)) {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
-		
 		UPlayerHUD* InstancedHUDWidget = CreateWidget<UPlayerHUD, APlayerController*>(PlayerController, PlayerHUDWidgetClass);
 		InstancedHUDWidget->OnCurrentHealthChanged(CurrentHealth);
 		InstancedHUDWidget->OnMaxHealthChanged(MaxHealth);
@@ -67,26 +83,6 @@ void APlayerCharacter::BeginPlay() {
 		AttackComponent->OnActiveWeaponChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnActiveWeaponChanged);
 		
 		InstancedHUDWidget->AddToPlayerScreen();
-	}
-	
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), StaticClass(), FoundActors);
-	FoundActors.Remove(this);
-	for (int i = 0; i < FoundActors.Num(); i++) {
-		APlayerCharacter* TargetActor = Cast<APlayerCharacter>(FoundActors[i]);
-		TargetActor->GetCapsuleComponent()->MoveIgnoreActors.AddUnique(this);
-	}
-	GetCapsuleComponent()->MoveIgnoreActors = FoundActors;
-}
-
-void APlayerCharacter::PossessedBy(AController* NewController) {
-	Super::PossessedBy(NewController);
-	
-	if (APlayerController* PlayerController = Cast<APlayerController>(NewController)) {
-		auto LocalPlayer = PlayerController->GetLocalPlayer();
-		if (auto* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer)) {
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
 	}
 }
 
@@ -157,6 +153,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Started, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputDown);
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Completed, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputReleased);
+		
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, AttackComponent, &UPlayerAttackComponent::OnReloadInputDown);
 	}
 }
 
