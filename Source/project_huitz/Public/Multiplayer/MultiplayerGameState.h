@@ -6,9 +6,6 @@
 #include "GameFramework/GameStateBase.h"
 #include "MultiplayerGameState.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROJECT_HUITZ_API AMultiplayerGameState : public AGameStateBase
 {

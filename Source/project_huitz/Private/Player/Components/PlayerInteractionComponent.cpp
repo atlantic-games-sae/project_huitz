@@ -1,7 +1,6 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "PlayerInteractionComponent.h"
-
+#include "Player/Components/PlayerInteractionComponent.h"
 #include "InteractableObject.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/KismetSystemLibrary.h"

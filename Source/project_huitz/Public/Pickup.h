@@ -20,7 +20,7 @@ protected:
 	virtual void BeginPlay() override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Components")
-	UBoxComponent* TriggerBox;
+	TObjectPtr<UBoxComponent> TriggerBox;
 	
 	UFUNCTION()
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

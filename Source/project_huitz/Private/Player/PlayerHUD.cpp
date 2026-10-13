@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "PlayerHUD.h"
+#include "Player/PlayerHUD.h"
 
 void UPlayerHUD::Initialize(float pCurrentHealth, float pMaxHealth) {
 	CurrentHealth = pCurrentHealth;

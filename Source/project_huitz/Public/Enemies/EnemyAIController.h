@@ -16,5 +16,5 @@ public:
 	
 protected:
 	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
-	UStateTreeAIComponent* StateTreeAI;
+	TObjectPtr<UStateTreeAIComponent> StateTreeAI;
 };

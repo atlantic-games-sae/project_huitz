@@ -3,9 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enemy.h"
-#include "EnemyAIController.h"
-#include "PlayerCharacter.h"
+#include "Enemies/Enemy.h"
+#include "Enemies/EnemyAIController.h"
+#include "Player/PlayerCharacter.h"
 #include "Blueprint/StateTreeTaskBlueprintBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -21,17 +21,17 @@ public:
 	}
 	
 	UPROPERTY(EditAnywhere)
-	AEnemy* EnemyPawn;
+	TWeakObjectPtr<AEnemy> EnemyPawn;
 	
 	UPROPERTY(EditAnywhere)
-	AEnemyAIController* AIController;
+	TWeakObjectPtr<AEnemyAIController> AIController;
 	
 	UPROPERTY(EditAnywhere)
 	float StopRange;
 	
 protected:
 	UPROPERTY()
-	TArray<APlayerCharacter*> AllPlayers;
+	TArray<TObjectPtr<APlayerCharacter>> AllPlayers;
 	
 	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override {
 		TargetPlayer = nullptr;

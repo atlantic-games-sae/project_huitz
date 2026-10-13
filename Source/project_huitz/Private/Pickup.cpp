@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Pickup.h"
-#include "PlayerCharacter.h"
+#include "Player/PlayerCharacter.h"
 
 APickup::APickup() {
 	PrimaryActorTick.bCanEverTick = true;

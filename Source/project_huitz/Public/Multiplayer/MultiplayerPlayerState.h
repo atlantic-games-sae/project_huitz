@@ -6,9 +6,6 @@
 #include "GameFramework/PlayerState.h"
 #include "MultiplayerPlayerState.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROJECT_HUITZ_API AMultiplayerPlayerState : public APlayerState
 {

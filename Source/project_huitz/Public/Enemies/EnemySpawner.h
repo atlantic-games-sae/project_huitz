@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Enemy.h"
-#include "ReactToTriggerInterface.h"
+#include "Interfaces/ReactToTriggerInterface.h"
 #include "EnemySpawner.generated.h"
 
 UCLASS()
@@ -22,7 +22,7 @@ public:
 	void SpawnEnemy();
 	
 	UPROPERTY(BlueprintReadWrite)
-	TArray<AEnemy*> ActiveEnemies;
+	TArray<TObjectPtr<AEnemy>> ActiveEnemies;
 	
 	UFUNCTION()
 	void OnEnemyDestroyed(AActor* DestroyedActor);

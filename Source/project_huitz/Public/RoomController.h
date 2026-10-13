@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ReactToTriggerInterface.h"
+#include "Interfaces/ReactToTriggerInterface.h"
 #include "UObject/Object.h"
 #include "RoomController.generated.h"
 

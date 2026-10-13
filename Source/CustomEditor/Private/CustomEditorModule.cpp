@@ -1,6 +1,6 @@
 #include "CustomEditorModule.h"
 #include "CustomMovementComponentDetailsCustomization.h"
-#include "CustomMovementComponent.h"
+#include "Player/Components/CustomMovementComponent.h"
 	 
 IMPLEMENT_GAME_MODULE(FCustomEditorModule, CustomEditor);
 

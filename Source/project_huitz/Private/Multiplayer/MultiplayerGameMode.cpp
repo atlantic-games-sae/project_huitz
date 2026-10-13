@@ -1,11 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "MultiplayerGameMode.h"
-#include "PlayerCharacter.h"
-#include "CustomPlayerController.h"
-#include "MultiplayerGameState.h"
-#include "MultiplayerPlayerState.h"
-#include "Kismet/GameplayStatics.h"
+#include "Multiplayer/MultiplayerGameMode.h"
+#include "Player/PlayerCharacter.h"
+#include "Player/CustomPlayerController.h"
+#include "Multiplayer/MultiplayerGameState.h"
+#include "Multiplayer/MultiplayerPlayerState.h"
 
 AMultiplayerGameMode::AMultiplayerGameMode() {
 	DefaultPawnClass = APlayerCharacter::StaticClass();

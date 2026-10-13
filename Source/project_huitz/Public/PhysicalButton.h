@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "InteractableObject.h"
-#include "ReactToTriggerInterface.h"
 #include "PhysicalButton.generated.h"
 
 UCLASS(Abstract)
@@ -18,5 +17,5 @@ public:
 	
 	/** Objects must implement the ReactToTrigger interface, otherwise nothing will happen */
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
-	TArray<AActor*> ActorsToTrigger;
+	TArray<TObjectPtr<AActor>> ActorsToTrigger;
 };

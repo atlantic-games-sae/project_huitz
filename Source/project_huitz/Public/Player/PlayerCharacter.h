@@ -7,8 +7,8 @@
 #include "Camera/CameraComponent.h"
 #include "EnhancedPlayerInput.h"
 #include "InputActionValue.h"
-#include "PlayerInteractionComponent.h"
-#include "PlayerHUD.h"
+#include "Player/Components/PlayerInteractionComponent.h"
+#include "Player/PlayerHUD.h"
 #include "PlayerCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, int, Health);

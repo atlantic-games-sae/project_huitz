@@ -18,7 +18,7 @@ public:
 	virtual void Interact(UPlayerInteractionComponent* SourceComponent);
 	
 	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
-	UStaticMeshComponent* StaticMeshComponent;
+	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
 	
 protected:
 	UFUNCTION(BlueprintImplementableEvent)

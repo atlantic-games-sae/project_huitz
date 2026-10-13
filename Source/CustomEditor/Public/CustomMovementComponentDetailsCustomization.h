@@ -1,9 +1,7 @@
 #pragma once
+
 #include "CoreMinimal.h"
 #include "IDetailCustomization.h"
-#include "IPropertyUtilities.h"
-#include "DetailLayoutBuilder.h"
-#include "DetailCategoryBuilder.h"
 
 //Forward declaration of IPropertyHandle.
 class IPropertyHandle;

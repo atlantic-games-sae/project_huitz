@@ -1,7 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "PlayerAttackComponent.h"
-#include "Enemy.h"
+#include "Player/Components/PlayerAttackComponent.h"
+#include "Camera/CameraComponent.h"
+#include "Enemies/Enemy.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 UPlayerAttackComponent::UPlayerAttackComponent() {

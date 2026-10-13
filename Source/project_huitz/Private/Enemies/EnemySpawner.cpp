@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "EnemySpawner.h"
-
+#include "Enemies/EnemySpawner.h"
 #include "Components/ArrowComponent.h"
 
 AEnemySpawner::AEnemySpawner() {

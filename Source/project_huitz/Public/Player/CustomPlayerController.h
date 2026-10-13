@@ -14,7 +14,7 @@ class PROJECT_HUITZ_API ULobbySearchResultsRow : public UObject {
 	GENERATED_BODY()
 	
 public:
-	inline void Initialize(FString PLobbyId, FString POwnerName) {
+	void Initialize(FString PLobbyId, FString POwnerName) {
 		LobbyId = PLobbyId;
 		OwnerName = POwnerName;
 	};
@@ -44,7 +44,7 @@ protected:
 	FString DesiredLobbyId;
 	
 	UPROPERTY(BlueprintReadOnly, Category="Online Multiplayer")
-	TArray<ULobbySearchResultsRow*> LobbySearchResultsRows;
+	TArray<TObjectPtr<ULobbySearchResultsRow>> LobbySearchResultsRows;
 	
 	UFUNCTION(BlueprintCallable, Category="Online Multiplayer")
 	void Login();
