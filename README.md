@@ -1,4 +1,4 @@
-Files under `source/` are licensed under GPLv3, a copy of which can be found [here](source/LICENSE). These files are created and maintained by [@greyweather](https://github.com/greyweather).
+Files under `Source/` are licensed under GPLv3, a copy of which can be found [here](source/LICENSE). These files are created and maintained by [@greyweather](https://github.com/greyweather).
 
 The rest of this repository is 'all rights reserved', and is jointly owned by the members of Atlantic Games.
 
