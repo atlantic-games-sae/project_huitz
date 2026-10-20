@@ -58,7 +58,7 @@ void UPlayerAttackComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	
 	if (ActiveCooldown > 0.0f) ActiveCooldown -= DeltaTime;
 	
-	if (ActiveWeapon == nullptr) return;
+	if (!IsValid(ActiveWeapon)) return;
 	
 	if (ActiveCooldown <= 0.0f) {
 		if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
@@ -100,7 +100,7 @@ void UPlayerAttackComponent::OnPrimaryAttackInputDown() {
 	
 	bIsPrimaryAttackInputHeld = true;
 	
-	if (ActiveWeapon == nullptr || ActiveCooldown > 0.0f) return;
+	if (!IsValid(ActiveWeapon) || ActiveCooldown > 0.0f) return;
 	
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 		if (AsGun->AmmoRemainingInClip > 0) PerformAttack();

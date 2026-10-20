@@ -9,7 +9,7 @@ class PROJECT_HUITZ_API UHelperFunctions : public UObject {
     GENERATED_BODY()
 
 public:
-    UFUNCTION(BlueprintPure, Category = "Helper Functions")
+    UFUNCTION(BlueprintPure, Category="Helper Functions")
     static float GetAlphaInRange(float Input, float Min, float Max) {
         float* RealMin;
         float* RealMax;
@@ -27,11 +27,17 @@ public:
         return InternalResult;
     }
 
-    UFUNCTION(BlueprintPure, Category = "Helper Functions")
+    UFUNCTION(BlueprintPure, Category="Helper Functions")
     static float FloatMoveTowards(float BaseValue, float TargetValue, float MaxDelta) {
         if (BaseValue == TargetValue) return BaseValue;
         if (MaxDelta >= FMath::Abs(BaseValue - TargetValue)) return TargetValue;
         if (TargetValue > BaseValue) return BaseValue + MaxDelta;
         return BaseValue - MaxDelta;
+    }
+    
+    UFUNCTION(BlueprintPure, Category="Helper Functions")
+    static FVector2D MovementInputToWorldSpace(FVector2D Input, float ActorYaw) {
+        FVector2D NormalInput = Input.GetSafeNormal();
+        return FVector2D(NormalInput.X, -NormalInput.Y).GetRotated(ActorYaw + 90.0).GetSafeNormal();
     }
 };

@@ -20,9 +20,9 @@ void UPlayerInteractionComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	if (bCanInteract) {
 		AInteractableObject* NewTargetInteractable = PerformInteractionTrace();
 		if (NewTargetInteractable != TargetInteractableObject) {
-			if (TargetInteractableObject != nullptr) TargetInteractableObject->StaticMeshComponent->SetOverlayMaterial(nullptr);
+			if (IsValid(TargetInteractableObject)) TargetInteractableObject->StaticMeshComponent->SetOverlayMaterial(nullptr);
 			TargetInteractableObject = NewTargetInteractable;
-			if (TargetInteractableObject != nullptr) TargetInteractableObject->StaticMeshComponent->SetOverlayMaterial(TargetHighlightMaterial);
+			if (IsValid(TargetInteractableObject)) TargetInteractableObject->StaticMeshComponent->SetOverlayMaterial(TargetHighlightMaterial);
 		}
 	}
 }
@@ -44,7 +44,7 @@ TObjectPtr<AInteractableObject> UPlayerInteractionComponent::PerformInteractionT
 }
 
 void UPlayerInteractionComponent::OnInteractInputDown() {
-	if (TargetInteractableObject == nullptr) return;
+	if (!IsValid(TargetInteractableObject)) return;
 	
 	TargetInteractableObject->Interact(this);
 }

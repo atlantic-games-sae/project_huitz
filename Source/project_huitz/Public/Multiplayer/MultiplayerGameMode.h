@@ -14,6 +14,15 @@ class PROJECT_HUITZ_API AMultiplayerGameMode : public AGameModeBase
 public:
 	AMultiplayerGameMode();
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<UUserWidget> BackgroundWidgetClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<UUserWidget> MainMenuWidgetClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<UUserWidget> LobbySelectWidgetClass;
+	
 protected:
 	virtual void BeginPlay() override;
 };

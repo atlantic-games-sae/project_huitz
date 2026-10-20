@@ -29,8 +29,18 @@ UCLASS()
 class PROJECT_HUITZ_API ACustomPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<UUserWidget> MenuBackgroundWidget_Ref;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<UUserWidget> MainMenuWidget_Ref;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<UUserWidget> LobbySelectWidget_Ref;
 	
 protected:
+	virtual void BeginPlay() override;
+	
 	FName LobbyName = "LobbyName";
 	FName SearchKey = "LobbyId";
 	FDelegateHandle JoinSessionDelegateHandle;
@@ -51,8 +61,12 @@ protected:
 	void HandleLoginCompleted(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error);
 	UPROPERTY(BlueprintAssignable, Category="Online Multiplayer")
 	FNotifyEventDelegate OnSuccessfulLogin;
+	UFUNCTION()
+	void OnSuccessfulLogin_Event();
 	UPROPERTY(BlueprintAssignable, Category="Online Multiplayer")
 	FNotifyEventDelegate OnFailedLogin;
+	UFUNCTION()
+	void OnFailedLogin_Event();
 	
 	UFUNCTION(BlueprintCallable, Category="Online Multiplayer")
 	void CreateLobby(FString LobbyId);
@@ -74,6 +88,12 @@ protected:
 	void HandleJoinLobbyCompleted(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	UPROPERTY(BlueprintAssignable, Category="Online Multiplayer")
 	FNotifyEventDelegate OnLobbyJoined;
+	
+	UFUNCTION()
+	void OnLobbyCreatedOrJoined_Event();
+	
+	UFUNCTION(BlueprintCallable)
+	void OnLocalPlayStarted();
 	
 	void FindLobbyToJoin(int LobbyIndexToJoin);
 	void HandleFindLobbyToJoinCompleted(bool bWasSuccessful, TSharedRef<FOnlineSessionSearch> Search);

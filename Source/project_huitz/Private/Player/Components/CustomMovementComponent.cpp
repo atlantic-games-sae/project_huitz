@@ -4,19 +4,19 @@
 #include "HelperFunctions.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
+#include "Player/PlayerCharacter.h"
 
 UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
     CustomMovementState = EMovementState::Falling;
     MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, CustomMovementState, this);
-    DesiredCrouchState = false;
+    DesiredSlideState = false;
 
     // Initialising variables
 
     WalkingSpeed = 600.0f;
-    CrouchingSpeed = 250.0f;
     SlideBoost = 500.0f;
-
-    SlidingThreshold = 500.0f;
+    
+    bSlideBoostChangesDirection = true;
 
     DashDuration = 0.2f;
     DashVelocity = 1050.0f;
@@ -25,7 +25,6 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, DesiredMaxWalkSpeed, this);
 
     WalkingAcceleration = 1250.0f;
-    CrouchingAcceleration = 850.0f;
 
     BrakingDeceleration = 4000.0f;
     SlidingDeceleration = 450.0f;
@@ -41,7 +40,10 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     EnableAirDeceleration = true;
     HasSlideBoosted = false;
     MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, HasSlideBoosted, this);
-
+    
+    TotalStaminaPoints = 3;
+    StaminaRegenPerSecond = 0.5f;
+    
     // Any variables inherited from CharacterMovementComponent that have their defaults overriden
     SetIsReplicatedByDefault(true);
     MaxWalkSpeed = WalkingSpeed;
@@ -57,12 +59,21 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
 
 void UCustomMovementComponent::BeginPlay() {
     Super::BeginPlay();
+    
+    CurrentStamina = TotalStaminaPoints;
 
     SetMovementState(EMovementState::Walking);
 }
 
-void UCustomMovementComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
+void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
     if (CustomMovementState == EMovementState::Dashing) ActiveDashTimer -= DeltaTime;
+    
+    if (CurrentStamina < TotalStaminaPoints) {
+        if (TotalStaminaPoints - CurrentStamina < StaminaRegenPerSecond * DeltaTime) {
+            CurrentStamina = TotalStaminaPoints;
+        } else CurrentStamina += StaminaRegenPerSecond * DeltaTime;
+    }
+    
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
@@ -75,7 +86,7 @@ void UCustomMovementComponent::GetLifetimeReplicatedProps(TArray<class FLifetime
     DOREPLIFETIME_WITH_PARAMS_FAST(UCustomMovementComponent, CustomMovementState, SharedParams);
     DOREPLIFETIME_WITH_PARAMS_FAST(UCustomMovementComponent, ActiveDashDirection, SharedParams);
     DOREPLIFETIME_WITH_PARAMS_FAST(UCustomMovementComponent, DesiredMaxWalkSpeed, SharedParams);
-    DOREPLIFETIME_WITH_PARAMS_FAST(UCustomMovementComponent, DesiredCrouchState, SharedParams);
+    DOREPLIFETIME_WITH_PARAMS_FAST(UCustomMovementComponent, DesiredSlideState, SharedParams);
     DOREPLIFETIME_WITH_PARAMS_FAST(UCustomMovementComponent, SlideDirection, SharedParams);
     DOREPLIFETIME_WITH_PARAMS_FAST(UCustomMovementComponent, HasSlideBoosted, SharedParams);
 }
@@ -83,7 +94,7 @@ void UCustomMovementComponent::GetLifetimeReplicatedProps(TArray<class FLifetime
 void UCustomMovementComponent::SetMovementState_Implementation(EMovementState NewState) {
     if (NewState == CustomMovementState) return;
     switch(NewState) {
-        case EMovementState::Walking:
+        case EMovementState::None:
             DesiredMaxWalkSpeed = WalkingSpeed;
             MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, DesiredMaxWalkSpeed, this);
             MaxAcceleration = WalkingAcceleration;
@@ -91,10 +102,10 @@ void UCustomMovementComponent::SetMovementState_Implementation(EMovementState Ne
             HasSlideBoosted = false;
             MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, HasSlideBoosted, this);
             break;
-        case EMovementState::Crouching:
-            DesiredMaxWalkSpeed = CrouchingSpeed;
+        case EMovementState::Walking:
+            DesiredMaxWalkSpeed = WalkingSpeed;
             MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, DesiredMaxWalkSpeed, this);
-            MaxAcceleration = CrouchingAcceleration;
+            MaxAcceleration = WalkingAcceleration;
             BrakingDecelerationWalking = BrakingDeceleration;
             HasSlideBoosted = false;
             MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, HasSlideBoosted, this);
@@ -104,14 +115,27 @@ void UCustomMovementComponent::SetMovementState_Implementation(EMovementState Ne
             MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, DesiredMaxWalkSpeed, this);
             MaxAcceleration = 0.0f;
             BrakingDecelerationWalking = 0.0f;
-            SlideDirection = GetHorizontalVelocity().GetSafeNormal();
+            
+            {
+                TObjectPtr<APlayerCharacter> PlayerCharacter = Cast<APlayerCharacter>(GetOwner());
+                if (IsValid(PlayerCharacter)) {
+                    FVector2D CurrentMovementInput = PlayerCharacter->GetCurrentMovementInput();
+                    if (CurrentMovementInput != FVector2D::ZeroVector && !HasSlideBoosted && bSlideBoostChangesDirection) {
+                        SlideDirection = UHelperFunctions::MovementInputToWorldSpace(CurrentMovementInput, PlayerCharacter->GetActorRotation().Yaw);
+                    } else {
+                        SlideDirection = GetHorizontalVelocity().GetSafeNormal();
+                    }
+                }
+            }
             MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, SlideDirection, this);
+            
             if (!HasSlideBoosted) {
                 MaxWalkSpeed = FMath::Clamp(MaxWalkSpeed + SlideBoost, 0.0f, DashVelocity);
                 Velocity = FVector(SlideDirection.X, SlideDirection.Y, 0) * FMath::Clamp(GetHorizontalVelocity().Length() + SlideBoost, 0.0, DashVelocity);
                 HasSlideBoosted = true;
                 MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, HasSlideBoosted, this);
             }
+        
             break;
         case EMovementState::Falling:
             if (CustomMovementState == EMovementState::Sliding) {
@@ -145,33 +169,29 @@ void UCustomMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovem
     Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 
     if (CustomMovementState == EMovementState::Falling && MovementMode == MOVE_Walking) {
-        if (DesiredCrouchState) CrouchOrSlideBasedOnHorizontalVelocity();
+        if (DesiredSlideState) SetMovementState_Server(EMovementState::Sliding);
         else if (GetHorizontalVelocity().Length() > 0.0) SetMovementState(EMovementState::Walking);
         else SetMovementState(EMovementState::None);
-    }
-
-    if (CustomMovementState != EMovementState::Falling && MovementMode == MOVE_Falling) {
+    } else if (CustomMovementState != EMovementState::Falling && MovementMode == MOVE_Falling) {
         SetMovementState(EMovementState::Falling);
     }
 }
 
-void UCustomMovementComponent::SetDesiredCrouchState(bool value) {
-    DesiredCrouchState = value;
-    MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, DesiredCrouchState, this);
+void UCustomMovementComponent::SetDesiredSlideState(bool value) {
+    DesiredSlideState = value;
+    MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, DesiredSlideState, this);
     
-    OnDesiredCrouchStateChanged();
+    OnDesiredSlideStateChanged();
     
-    if (GetOwnerRole() == ROLE_AutonomousProxy) SetDesiredCrouchState_Server(value);
+    if (GetOwnerRole() == ROLE_AutonomousProxy) SetDesiredSlideState_Server(value);
 }
 
-void UCustomMovementComponent::OnDesiredCrouchStateChanged() {
-    if (DesiredCrouchState) {
-        if (CustomMovementState == EMovementState::None) SetMovementState(EMovementState::Crouching);
-        else if (CustomMovementState == EMovementState::Walking) CrouchOrSlideBasedOnHorizontalVelocity();
-    } else if (CustomMovementState == EMovementState::Crouching || CustomMovementState == EMovementState::Sliding) {
-        if (GetHorizontalVelocity().Length() > 0.0) {
-            SetMovementState(EMovementState::Walking);
-        } else SetMovementState(EMovementState::None);
+void UCustomMovementComponent::OnDesiredSlideStateChanged() {
+    if (DesiredSlideState) {
+        if (CustomMovementState == EMovementState::Walking) SetMovementState(EMovementState::Sliding);
+    } else if (CustomMovementState == EMovementState::Sliding) {
+        if (GetHorizontalVelocity().Length() > 0.0) SetMovementState(EMovementState::Walking);
+        else SetMovementState(EMovementState::None);
     }
 }
 
@@ -200,18 +220,14 @@ EMovementState UCustomMovementComponent::GetMovementState() const {
     return CustomMovementState;
 }
 
-void UCustomMovementComponent::CrouchOrSlideBasedOnHorizontalVelocity_Implementation() {
-    if (GetHorizontalVelocity().Length() >= SlidingThreshold) SetMovementState(EMovementState::Sliding);
-    else SetMovementState(EMovementState::Crouching);
-}
-
 FVector2D UCustomMovementComponent::GetHorizontalVelocity() const {
     return FVector2D(Velocity.X, Velocity.Y);
 }
 
 void UCustomMovementComponent::PerformMovement(float DeltaTime) {
     if (CustomMovementState == EMovementState::None && GetHorizontalVelocity().Length() > 0.0) {
-        SetMovementState(EMovementState::Walking);
+        if (DesiredSlideState) SetMovementState(EMovementState::Sliding);
+        else SetMovementState(EMovementState::Walking);
     } else if (CustomMovementState == EMovementState::Walking && GetHorizontalVelocity().Length() == 0.0) {
         SetMovementState(EMovementState::None);
     }
@@ -224,7 +240,7 @@ void UCustomMovementComponent::PerformMovement(float DeltaTime) {
     
     switch (CustomMovementState) {
         case EMovementState::Dashing:
-            if (DesiredCrouchState) SetMovementState(EMovementState::Sliding);
+            if (DesiredSlideState) SetMovementState(EMovementState::Sliding);
             else if (ActiveDashTimer <= 0) {
                 if (MovementMode == MOVE_Falling) SetMovementState(EMovementState::Falling);
                 else SetMovementState(EMovementState::Walking);
@@ -250,18 +266,9 @@ void UCustomMovementComponent::UpdateMaxWalkSpeed(float DeltaTime) {
     if (MaxWalkSpeed == DesiredMaxWalkSpeed) return;
     float MaxDelta = 0.0f;
 
-    if (DesiredMaxWalkSpeed > MaxWalkSpeed) {
-        switch (CustomMovementState) {
-            case EMovementState::Walking:
-                MaxDelta = WalkingAcceleration;
-                break;
-            case EMovementState::Crouching:
-                MaxDelta = CrouchingAcceleration;
-                break;
-            default:
-                break;
-        }
-    } else {
+    if (DesiredMaxWalkSpeed > MaxWalkSpeed) { // Accelerating
+        if (CustomMovementState == EMovementState::Walking || CustomMovementState == EMovementState::None) MaxDelta = WalkingAcceleration;
+    } else { // Decelerating
         if (CustomMovementState == EMovementState::Sliding) MaxDelta = SlidingDeceleration;
         else if (CustomMovementState != EMovementState::Falling) {
             MaxDelta = FMath::Lerp(MinGroundDeceleration, MaxGroundDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(GetHorizontalVelocity().Length(), 0, DashVelocity)));
@@ -276,25 +283,19 @@ void UCustomMovementComponent::UpdateMaxWalkSpeed(float DeltaTime) {
 
 void UCustomMovementComponent::UpdateSlidingVelocity(float DeltaTime) {
     if (CustomMovementState != EMovementState::Sliding) return;
-
-    if (GetHorizontalVelocity().Length() <= CrouchingSpeed) SetMovementState(EMovementState::Crouching);
-    else {
-        SlideVelocity = UHelperFunctions::FloatMoveTowards(GetHorizontalVelocity().Length(), 0, SlidingDeceleration * DeltaTime);
-        Velocity = (FVector(SlideDirection.X, SlideDirection.Y, 0) * SlideVelocity) + FVector(0, 0, Velocity.Z);
-    }
+    
+    SlideVelocity = UHelperFunctions::FloatMoveTowards(GetHorizontalVelocity().Length(), 0, SlidingDeceleration * DeltaTime);
+    Velocity = (FVector(SlideDirection.X, SlideDirection.Y, 0) * SlideVelocity) + FVector(0, 0, Velocity.Z);
 }
 
 void UCustomMovementComponent::Dash(FVector2D InputDirection) {
     if (InputDirection == FVector2D().ZeroVector) return;
 
-    switch (CustomMovementState) {
-        case EMovementState::Sliding:
-            return;
-        case EMovementState::Crouching:
-            return;
-        default:
-            break;
-    }
+    if (CustomMovementState == EMovementState::Sliding) return;
+    
+    if (CurrentStamina < 1.0f) return;
+    
+    CurrentStamina -= 1.0f;
 
     PerformDash(InputDirection);
     
@@ -302,7 +303,7 @@ void UCustomMovementComponent::Dash(FVector2D InputDirection) {
 }
 
 void UCustomMovementComponent::PerformDash(FVector2D InputDirection) {
-    ActiveDashDirection = FVector2D(InputDirection.X, -InputDirection.Y).GetRotated(GetOwner()->GetActorRotation().Yaw + 90.0);
+    ActiveDashDirection = UHelperFunctions::MovementInputToWorldSpace(InputDirection, GetOwner()->GetActorRotation().Yaw);
     MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, ActiveDashDirection, this);
     
     SetMovementState(EMovementState::Dashing);

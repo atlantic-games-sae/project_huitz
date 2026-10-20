@@ -2,11 +2,6 @@
 
 #include "Player/PlayerHUD.h"
 
-void UPlayerHUD::Initialize(float pCurrentHealth, float pMaxHealth) {
-	CurrentHealth = pCurrentHealth;
-	MaxHealth = pMaxHealth;
-}
-
 void UPlayerHUD::OnCurrentHealthChanged(float Value) {
 	CurrentHealth = Value;
 	

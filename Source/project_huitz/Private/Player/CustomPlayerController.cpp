@@ -9,6 +9,65 @@
 #include "Interfaces/OnlineSessionDelegates.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Online/OnlineSessionNames.h"
+#include "Blueprint/UserWidget.h"
+#include "Multiplayer/MultiplayerGameMode.h"
+
+void ACustomPlayerController::BeginPlay() {
+	Super::BeginPlay();
+	
+	OnFailedLogin.AddUniqueDynamic(this, &ACustomPlayerController::OnFailedLogin_Event);
+	OnSuccessfulLogin.AddUniqueDynamic(this, &ACustomPlayerController::OnSuccessfulLogin_Event);
+	OnLobbyCreated.AddUniqueDynamic(this, &ACustomPlayerController::OnLobbyCreatedOrJoined_Event);
+	OnLobbyJoined.AddUniqueDynamic(this, &ACustomPlayerController::OnLobbyCreatedOrJoined_Event);
+}
+
+void ACustomPlayerController::OnFailedLogin_Event() {
+	if (IsValid(MainMenuWidget_Ref)) {
+		if (!MainMenuWidget_Ref->IsInViewport()) {
+			if (AMultiplayerGameMode* GameMode = Cast<AMultiplayerGameMode>(GetWorld()->GetAuthGameMode())) {
+				MainMenuWidget_Ref = CreateWidget<UUserWidget, ACustomPlayerController*>(this, GameMode->MainMenuWidgetClass);
+				MainMenuWidget_Ref->AddToViewport(1);
+			}
+		}
+	}
+}
+
+
+void ACustomPlayerController::OnSuccessfulLogin_Event() {
+	if (IsValid(MainMenuWidget_Ref)) {
+		if (MainMenuWidget_Ref->IsInViewport()) {
+			MainMenuWidget_Ref->RemoveFromViewport();
+		}
+		if (AMultiplayerGameMode* GameMode = Cast<AMultiplayerGameMode>(GetWorld()->GetAuthGameMode())) {
+			LobbySelectWidget_Ref = CreateWidget<UUserWidget, ACustomPlayerController*>(this, GameMode->LobbySelectWidgetClass);
+			LobbySelectWidget_Ref->AddToViewport(1);
+		}
+	}
+}
+
+void ACustomPlayerController::OnLobbyCreatedOrJoined_Event() {
+	if (IsValid(LobbySelectWidget_Ref)) {
+		if (LobbySelectWidget_Ref->IsInViewport()) {
+			LobbySelectWidget_Ref->RemoveFromViewport();
+		}
+	}
+	if (IsValid(MainMenuWidget_Ref)) {
+		if (MainMenuWidget_Ref->IsInViewport()) {
+			MainMenuWidget_Ref->RemoveFromViewport();
+		}
+	}
+	if (IsValid(MenuBackgroundWidget_Ref)) {
+		if (MenuBackgroundWidget_Ref->IsInViewport()) {
+			MenuBackgroundWidget_Ref->RemoveFromViewport();
+		}
+	}
+	SetInputMode(FInputModeGameOnly().SetConsumeCaptureMouseDown(true));
+	SetShowMouseCursor(false);
+}
+
+void ACustomPlayerController::OnLocalPlayStarted() {
+	OnLobbyCreatedOrJoined_Event();
+}
 
 void ACustomPlayerController::Login() {
 	IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld());

@@ -17,7 +17,6 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) 
 	CharacterHeight = 190.0f;
 	CapsuleRadiusProportionalToHeight = 0.15f;
 
-	CrouchingHeightPercentage = 0.6f;
     SlidingHeightPercentage = 0.35f;
     HeightTransitionSpeed = 750.0f;
 
@@ -65,7 +64,9 @@ void APlayerCharacter::PossessedBy(AController* NewController) {
 		if (auto* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer)) {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
-		UPlayerHUD* InstancedHUDWidget = CreateWidget<UPlayerHUD, APlayerController*>(PlayerController, PlayerHUDWidgetClass);
+		TObjectPtr<UPlayerHUD> InstancedHUDWidget = CreateWidget<UPlayerHUD, APlayerController*>(PlayerController, PlayerHUDWidgetClass);
+		if (!IsValid(InstancedHUDWidget)) return;
+		
 		InstancedHUDWidget->OnCurrentHealthChanged(CurrentHealth);
 		InstancedHUDWidget->OnMaxHealthChanged(MaxHealth);
 		
@@ -89,12 +90,12 @@ void APlayerCharacter::PossessedBy(AController* NewController) {
 void APlayerCharacter::Move(const FInputActionValue& Value) {
 	CurrentMovementInput = Value.Get<FVector2D>();
 
-	if (Controller == nullptr) return;
+	if (!IsValid(Controller)) return;
 
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);\
 
 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
@@ -146,8 +147,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Started, this, &APlayerCharacter::Dash);
 
-		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APlayerCharacter::priv_Crouch);
-		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APlayerCharacter::priv_UnCrouch);
+		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Started, this, &APlayerCharacter::priv_Crouch);
+		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Completed, this, &APlayerCharacter::priv_UnCrouch);
 		
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, InteractionComponent, &UPlayerInteractionComponent::OnInteractInputDown);
 	
@@ -168,10 +169,9 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 void APlayerCharacter::AdjustHeight(float DeltaTime) {
 	EMovementState MovementState = MovementComponent->GetMovementState();
-	if (MovementState != EMovementState::Crouching && MovementState != EMovementState::Sliding && !HasRoomToStand(HeightTransitionSpeed * DeltaTime)) return;
+	if (MovementState != EMovementState::Sliding && !HasRoomToStand(HeightTransitionSpeed * DeltaTime)) return;
 	float TargetHeight = CharacterHeight;
-	if (MovementState == EMovementState::Crouching) TargetHeight *= CrouchingHeightPercentage;
-	else if (MovementState == EMovementState::Sliding) TargetHeight *= SlidingHeightPercentage;
+	if (MovementState == EMovementState::Sliding) TargetHeight *= SlidingHeightPercentage;
 	GetCapsuleComponent()->SetCapsuleHalfHeight(UHelperFunctions::FloatMoveTowards(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHeight / 2.0f, (HeightTransitionSpeed / 2.0f) * DeltaTime));
 }
 
@@ -187,11 +187,11 @@ bool APlayerCharacter::HasRoomToStand(float IntendedHeightDelta) const {
 }
 
 void APlayerCharacter::Crouch(bool bClientSimulation) {
-    MovementComponent->SetDesiredCrouchState(true);
+    MovementComponent->SetDesiredSlideState(true);
 }
 
 void APlayerCharacter::UnCrouch(bool bClientSimulation) {
-    MovementComponent->SetDesiredCrouchState(false);
+    MovementComponent->SetDesiredSlideState(false);
 }
 
 void APlayerCharacter::Dash() {

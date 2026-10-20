@@ -48,6 +48,8 @@ public:
 	
 	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
 	UPlayerInteractionComponent* InteractionComponent;
+	
+	FVector2D GetCurrentMovementInput() const { return CurrentMovementInput; }
 
 protected:
 	UPROPERTY(Category="Input", EditDefaultsOnly)
@@ -69,7 +71,7 @@ protected:
 	UInputAction* DashAction;
 
 	UPROPERTY(Category="Input", EditDefaultsOnly)
-	UInputAction* CrouchAction;
+	UInputAction* SlideAction;
 
 	UPROPERTY(Category="Input", EditDefaultsOnly)
 	UInputAction* PrimaryAttackAction;
@@ -84,9 +86,7 @@ protected:
 	float CharacterHeight;
 	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, ClampMax=0.5, UIMax=0.5))
 	float CapsuleRadiusProportionalToHeight;
-
-	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
-	float CrouchingHeightPercentage;
+	
 	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
 	float SlidingHeightPercentage;
 	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))

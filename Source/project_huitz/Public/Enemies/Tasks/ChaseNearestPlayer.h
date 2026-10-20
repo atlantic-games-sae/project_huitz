@@ -21,10 +21,10 @@ public:
 	}
 	
 	UPROPERTY(EditAnywhere)
-	TWeakObjectPtr<AEnemy> EnemyPawn;
+	TObjectPtr<AEnemy> EnemyPawn;
 	
 	UPROPERTY(EditAnywhere)
-	TWeakObjectPtr<AEnemyAIController> AIController;
+	TObjectPtr<AEnemyAIController> AIController;
 	
 	UPROPERTY(EditAnywhere)
 	float StopRange;

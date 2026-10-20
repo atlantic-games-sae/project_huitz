@@ -12,8 +12,6 @@ class PROJECT_HUITZ_API UPlayerHUD : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-	void Initialize(float pCurrentHealth, float pMaxHealth);
-	
 	UFUNCTION()
 	void OnCurrentHealthChanged(float Value);
 	
