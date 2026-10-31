@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// © 2026 Atlantic Games. All rights reserved.
 
 #include "Enemies/EnemySpawner.h"
 #include "Components/ArrowComponent.h"

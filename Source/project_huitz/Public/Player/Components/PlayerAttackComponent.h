@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// © 2026 Atlantic Games. All rights reserved.
 
 #pragma once
 
@@ -10,7 +10,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIntValueChangedSignature, int, Value);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActiveWeaponChangedSignature, bool, bDoesWeaponUseAmmo);
 
-UCLASS(Blueprintable)
+UCLASS(ClassGroup=(Custom), Blueprintable, meta=(BlueprintSpawnableComponent))
 class PROJECT_HUITZ_API UPlayerAttackComponent : public UActorComponent {
 	GENERATED_BODY()
 

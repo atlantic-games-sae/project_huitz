@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// © 2026 Atlantic Games. All rights reserved.
 
 #pragma once
 
@@ -13,16 +13,4 @@ class PROJECT_HUITZ_API AMultiplayerGameMode : public AGameModeBase
 	
 public:
 	AMultiplayerGameMode();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<UUserWidget> BackgroundWidgetClass;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<UUserWidget> MainMenuWidgetClass;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<UUserWidget> LobbySelectWidgetClass;
-	
-protected:
-	virtual void BeginPlay() override;
 };

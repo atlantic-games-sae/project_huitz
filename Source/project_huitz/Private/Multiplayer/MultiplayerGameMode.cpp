@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// © 2026 Atlantic Games. All rights reserved.
 
 #include "Multiplayer/MultiplayerGameMode.h"
 #include "Player/PlayerCharacter.h"
@@ -13,19 +13,3 @@ AMultiplayerGameMode::AMultiplayerGameMode() {
 	PlayerStateClass = AMultiplayerPlayerState::StaticClass();
 }
 
-void AMultiplayerGameMode::BeginPlay() {
-	Super::BeginPlay();
-	
-	if (ACustomPlayerController* PlayerController = Cast<ACustomPlayerController>(GetWorld()->GetFirstPlayerController())) {
-		PlayerController->SetInputMode(FInputModeUIOnly());
-		PlayerController->SetShowMouseCursor(true);
-		
-		UUserWidget* BackgroundWidget = CreateWidget<UUserWidget, APlayerController*>(PlayerController, BackgroundWidgetClass);
-		BackgroundWidget->AddToViewport();
-		PlayerController->MenuBackgroundWidget_Ref = BackgroundWidget;
-		
-		UUserWidget* MainMenuWidget = CreateWidget<UUserWidget, APlayerController*>(PlayerController, MainMenuWidgetClass);
-		MainMenuWidget->AddToViewport(1);
-		PlayerController->MainMenuWidget_Ref = MainMenuWidget;
-	}
-}

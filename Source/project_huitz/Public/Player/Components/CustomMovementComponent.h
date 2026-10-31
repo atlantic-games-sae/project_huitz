@@ -22,7 +22,7 @@ enum class EMovementState : uint8 {
     Dashing
 };
 
-UCLASS()
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class UCustomMovementComponent : public UCharacterMovementComponent {
     GENERATED_BODY()
 

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// © 2026 Atlantic Games. All rights reserved.
 
 #pragma once
 
@@ -11,6 +11,7 @@
 #include "Player/PlayerHUD.h"
 #include "PlayerCharacter.generated.h"
 
+class ACustomPlayerController;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, int, Health);
 
 class UCustomMovementComponent;
@@ -81,6 +82,9 @@ protected:
 	
 	UPROPERTY(Category="Input", EditDefaultsOnly)
 	UInputAction* InteractAction;
+	
+	UPROPERTY(Category="Input", EditDefaultsOnly)
+	UInputAction* PauseGameAction;
 
 	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, Units="Centimeters"))
 	float CharacterHeight;
@@ -110,4 +114,6 @@ private:
 	void ClearMovementInput() {
 		CurrentMovementInput = FVector2D().ZeroVector;
 	}
+	
+	ACustomPlayerController* GetCustomPlayerController() const;
 };

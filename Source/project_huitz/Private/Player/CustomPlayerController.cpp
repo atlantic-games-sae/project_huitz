@@ -1,6 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// © 2026 Atlantic Games. All rights reserved.
 
 #include "Player/CustomPlayerController.h"
+
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "OnlineSubsystemTypes.h"
@@ -9,64 +10,11 @@
 #include "Interfaces/OnlineSessionDelegates.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Online/OnlineSessionNames.h"
-#include "Blueprint/UserWidget.h"
-#include "Multiplayer/MultiplayerGameMode.h"
+#include "LevelScripts/MainMenuLevelScript.h"
+#include "Player/Components/PauseMenuComponent.h"
 
-void ACustomPlayerController::BeginPlay() {
-	Super::BeginPlay();
-	
-	OnFailedLogin.AddUniqueDynamic(this, &ACustomPlayerController::OnFailedLogin_Event);
-	OnSuccessfulLogin.AddUniqueDynamic(this, &ACustomPlayerController::OnSuccessfulLogin_Event);
-	OnLobbyCreated.AddUniqueDynamic(this, &ACustomPlayerController::OnLobbyCreatedOrJoined_Event);
-	OnLobbyJoined.AddUniqueDynamic(this, &ACustomPlayerController::OnLobbyCreatedOrJoined_Event);
-}
-
-void ACustomPlayerController::OnFailedLogin_Event() {
-	if (IsValid(MainMenuWidget_Ref)) {
-		if (!MainMenuWidget_Ref->IsInViewport()) {
-			if (AMultiplayerGameMode* GameMode = Cast<AMultiplayerGameMode>(GetWorld()->GetAuthGameMode())) {
-				MainMenuWidget_Ref = CreateWidget<UUserWidget, ACustomPlayerController*>(this, GameMode->MainMenuWidgetClass);
-				MainMenuWidget_Ref->AddToViewport(1);
-			}
-		}
-	}
-}
-
-
-void ACustomPlayerController::OnSuccessfulLogin_Event() {
-	if (IsValid(MainMenuWidget_Ref)) {
-		if (MainMenuWidget_Ref->IsInViewport()) {
-			MainMenuWidget_Ref->RemoveFromViewport();
-		}
-		if (AMultiplayerGameMode* GameMode = Cast<AMultiplayerGameMode>(GetWorld()->GetAuthGameMode())) {
-			LobbySelectWidget_Ref = CreateWidget<UUserWidget, ACustomPlayerController*>(this, GameMode->LobbySelectWidgetClass);
-			LobbySelectWidget_Ref->AddToViewport(1);
-		}
-	}
-}
-
-void ACustomPlayerController::OnLobbyCreatedOrJoined_Event() {
-	if (IsValid(LobbySelectWidget_Ref)) {
-		if (LobbySelectWidget_Ref->IsInViewport()) {
-			LobbySelectWidget_Ref->RemoveFromViewport();
-		}
-	}
-	if (IsValid(MainMenuWidget_Ref)) {
-		if (MainMenuWidget_Ref->IsInViewport()) {
-			MainMenuWidget_Ref->RemoveFromViewport();
-		}
-	}
-	if (IsValid(MenuBackgroundWidget_Ref)) {
-		if (MenuBackgroundWidget_Ref->IsInViewport()) {
-			MenuBackgroundWidget_Ref->RemoveFromViewport();
-		}
-	}
-	SetInputMode(FInputModeGameOnly().SetConsumeCaptureMouseDown(true));
-	SetShowMouseCursor(false);
-}
-
-void ACustomPlayerController::OnLocalPlayStarted() {
-	OnLobbyCreatedOrJoined_Event();
+ACustomPlayerController::ACustomPlayerController(const FObjectInitializer& ObjectInitializer) {
+	PauseMenuComponent = CreateDefaultSubobject<UPauseMenuComponent>(FName(TEXT("Pause Menu Component")));
 }
 
 void ACustomPlayerController::Login() {
@@ -181,7 +129,7 @@ void ACustomPlayerController::CreateLobby_Internal() {
 	SessionSettings->bAllowJoinInProgress = false; // Once the session is started, no one can join.
 	SessionSettings->bIsDedicated = false; // Session created on dedicated server.
 	SessionSettings->bUseLobbiesIfAvailable = true; // For P2P we will use a lobby instead of a session
-	SessionSettings->bUseLobbiesVoiceChatIfAvailable = true; // We will also enable voice
+	SessionSettings->bUseLobbiesVoiceChatIfAvailable = false; // We will also enable voice
 	SessionSettings->bUsesStats = true; // Needed to keep track of player stats.
 	SessionSettings->Settings.Add(SearchKey, FOnlineSessionSetting((DesiredLobbyId), EOnlineDataAdvertisementType::ViaOnlineService));
 		
@@ -205,7 +153,8 @@ void ACustomPlayerController::HandleCreateLobbyCompleted(FName EOSLobbyName, boo
     if (bWasSuccessful) {
         UE_LOG(LogTemp, Warning, TEXT("Lobby: %s Created!"), *EOSLobbyName.ToString());
         if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, TEXT("Lobby Created!!"));
-        FString Map = "Game/Content/TestingLevels/MovementGym?listen"; // TODO: remove hardcoded map file location
+    	
+    	FString Map = "Game/Content/Levels/Testing/ShootingRange?listen";
         FURL TravelURL;
         TravelURL.Map = Map;
         GetWorld()->Listen(TravelURL);
@@ -395,4 +344,8 @@ void ACustomPlayerController::HandleJoinLobbyCompleted(FName SessionName, EOnJoi
 	// Clear our handle and reset the delegate. 
 	Session->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionDelegateHandle);
 	JoinSessionDelegateHandle.Reset();
+}
+
+AMainMenuLevelScript* ACustomPlayerController::GetMainMenuLevelScript() const {
+	return static_cast<AMainMenuLevelScript*>(GetLevel()->GetLevelScriptActor());
 }

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// © 2026 Atlantic Games. All rights reserved.
 
 #include "Player/PlayerCharacter.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -12,6 +12,8 @@
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Player/CustomPlayerController.h"
+#include "Player/Components/PauseMenuComponent.h"
 
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName)) {
 	CharacterHeight = 190.0f;
@@ -156,6 +158,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Completed, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputReleased);
 		
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, AttackComponent, &UPlayerAttackComponent::OnReloadInputDown);
+		
+		EnhancedInputComponent->BindAction(PauseGameAction, ETriggerEvent::Started, GetCustomPlayerController()->PauseMenuComponent, &UPauseMenuComponent::PauseGame);
 	}
 }
 
@@ -184,6 +188,10 @@ bool APlayerCharacter::HasRoomToStand(float IntendedHeightDelta) const {
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false, {}, EDrawDebugTrace::None, OutHit, true);
 	return !bHit;
+}
+
+ACustomPlayerController* APlayerCharacter::GetCustomPlayerController() const {
+	return static_cast<ACustomPlayerController*>(GetLocalViewingPlayerController());
 }
 
 void APlayerCharacter::Crouch(bool bClientSimulation) {

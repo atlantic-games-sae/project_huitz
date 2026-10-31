@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CustomGameInstance.h"
+#include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
 #include "HelperFunctions.generated.h"
 
@@ -39,5 +41,10 @@ public:
     static FVector2D MovementInputToWorldSpace(FVector2D Input, float ActorYaw) {
         FVector2D NormalInput = Input.GetSafeNormal();
         return FVector2D(NormalInput.X, -NormalInput.Y).GetRotated(ActorYaw + 90.0).GetSafeNormal();
+    }
+    
+    UFUNCTION(BlueprintPure, Category="Helper Functions")
+    static UCustomGameInstance* GetCustomGameInstance(const UObject* WorldContextObject) {
+        return static_cast<UCustomGameInstance*>(UGameplayStatics::GetGameInstance(WorldContextObject));
     }
 };
