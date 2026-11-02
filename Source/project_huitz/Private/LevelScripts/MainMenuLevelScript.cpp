@@ -69,10 +69,6 @@ void AMainMenuLevelScript::RemoveBackgroundWidget() {
 }
 
 void AMainMenuLevelScript::BeginLocalPlaySession(int SaveSlotIndex) {
-	UHelperFunctions::GetCustomGameInstance(this)->ActiveSaveSlotIndex = SaveSlotIndex;
-	
-	UHelperFunctions::GetCustomGameInstance(this)->LoadGameFromActiveSlot();
-	
 	if (!IsValid(GetCustomPlayerController())) return;
 	
 	RemoveForegroundWidget();
@@ -81,7 +77,8 @@ void AMainMenuLevelScript::BeginLocalPlaySession(int SaveSlotIndex) {
 	GetCustomPlayerController()->SetInputMode(FInputModeGameOnly());
 	GetCustomPlayerController()->SetShowMouseCursor(false);
 	
-	UGameplayStatics::CreatePlayer(GetCustomPlayerController());
+	UHelperFunctions::GetCustomGameInstance(this)->ActiveSaveSlotIndex = SaveSlotIndex;
+	UHelperFunctions::GetCustomGameInstance(this)->LoadGameFromActiveSlot();
 }
 
 void AMainMenuLevelScript::BeginOnlineLogin() {

@@ -7,6 +7,7 @@
 #include "UI/ConfirmationDialogWidgetBase.h"
 #include "CustomGameInstance.generated.h"
 
+class APlayerCharacter;
 class USaveSlot_SaveGame;
 
 UCLASS()
@@ -41,10 +42,31 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Saving/Loading")
 	void ClearSaveSlot(int SaveSlotIndex);
 	
-	void UpdateTimestampOfLastSave();
-	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<UConfirmationDialogWidgetBase> ConfirmationDialogWidgetClass;
+	
+	UFUNCTION(BlueprintCallable)
+	void SpawnPlayerCharacters(APlayerController* MarksmanPlayerController, APlayerController* BrawlerPlayerController);
+	
+	void SpawnPlayerCharacters(int MarksmanPlayerControllerIndex, int BrawlerPlayerControllerIndex);
+	
+	APlayerCharacter* GetMarksmanCharacter() { return MarksmanCharacter_Ref; }
+	APlayerCharacter* GetBrawlerCharacter() { return BrawlerCharacter_Ref; }
+	
+protected:
+	void UpdateTimestampOfLastSave();
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MustImplement="/Script/project_huitz.MarksmanCharacter"))
+	TSubclassOf<APlayerCharacter> MarksmanCharacterClass;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MustImplement="/Script/project_huitz.BrawlerCharacter"))
+	TSubclassOf<APlayerCharacter> BrawlerCharacterClass;
+	
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<APlayerCharacter> MarksmanCharacter_Ref;
+	
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<APlayerCharacter> BrawlerCharacter_Ref;
 	
 private:
 	double TimestampOfLastSave;

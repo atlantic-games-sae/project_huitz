@@ -9,13 +9,11 @@
 
 class AEnemySpawner;
 
-UCLASS()
+UCLASS(Abstract)
 class PROJECT_HUITZ_API ARoomController : public AActor, public IReactToTrigger {
 	GENERATED_BODY()
 	
 public:
-	ARoomController();
-	
 	virtual void OnTrigger_Implementation() override;
 	
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)

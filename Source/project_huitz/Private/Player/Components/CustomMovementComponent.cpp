@@ -1,3 +1,5 @@
+// © 2026 Atlantic Games. All rights reserved.
+
 #include "Player/Components/CustomMovementComponent.h"
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetSystemLibrary.h"

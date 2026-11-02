@@ -8,7 +8,7 @@
 #include "Interfaces/ReactToTriggerInterface.h"
 #include "EnemySpawner.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class PROJECT_HUITZ_API AEnemySpawner : public AActor, public IReactToTrigger {
 	GENERATED_BODY()
 	

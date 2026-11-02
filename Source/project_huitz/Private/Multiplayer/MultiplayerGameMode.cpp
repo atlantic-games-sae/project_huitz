@@ -1,15 +1,16 @@
 // © 2026 Atlantic Games. All rights reserved.
 
 #include "Multiplayer/MultiplayerGameMode.h"
-#include "Player/PlayerCharacter.h"
-#include "Player/CustomPlayerController.h"
-#include "Multiplayer/MultiplayerGameState.h"
-#include "Multiplayer/MultiplayerPlayerState.h"
 
-AMultiplayerGameMode::AMultiplayerGameMode() {
-	DefaultPawnClass = APlayerCharacter::StaticClass();
-	PlayerControllerClass = ACustomPlayerController::StaticClass();
-	GameStateClass = AMultiplayerGameState::StaticClass();
-	PlayerStateClass = AMultiplayerPlayerState::StaticClass();
+#include "HelperFunctions.h"
+#include "Kismet/GameplayStatics.h"
+
+void AMultiplayerGameMode::BeginPlay() {
+	Super::BeginPlay();
+	
+	// if there is only one player controller, then uses SpawnPlayerCharacters to spawn and possess the two characters
+	// in a build this should never run, since the second player controller is already created in the main menu
+	if (!IsValid(UGameplayStatics::GetPlayerController(this, 1))) {
+		UHelperFunctions::GetCustomGameInstance(this)->SpawnPlayerCharacters(0, 1);
+	}
 }
-

@@ -3,14 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "CustomGameMode.h"
 #include "MultiplayerGameMode.generated.h"
 
+class APlayerCharacter;
+
 UCLASS()
-class PROJECT_HUITZ_API AMultiplayerGameMode : public AGameModeBase
+class PROJECT_HUITZ_API AMultiplayerGameMode : public ACustomGameMode
 {
 	GENERATED_BODY()
 	
-public:
-	AMultiplayerGameMode();
+protected:
+	virtual void BeginPlay() override;
 };

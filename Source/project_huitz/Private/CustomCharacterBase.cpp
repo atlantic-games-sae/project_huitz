@@ -5,7 +5,7 @@
 
 ACustomCharacterBase::ACustomCharacterBase(const FObjectInitializer& ObjectInitializer) {
 	PrimaryActorTick.bCanEverTick = true;
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	// GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
 	MaxHealth = 50.0f;
 	CurrentHealth = MaxHealth;

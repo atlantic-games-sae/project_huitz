@@ -14,6 +14,9 @@ class PROJECT_HUITZ_API AGameplayLevelScript : public ALevelScriptActor
 {
 	GENERATED_BODY()
 
+protected:
+	virtual void BeginPlay() override;
+	
 public:
 	UFUNCTION(BlueprintCallable)
 	void LoadFromLevelSaveData(FLevelSaveData& SaveData);

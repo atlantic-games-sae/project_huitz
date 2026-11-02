@@ -42,6 +42,9 @@ struct FCharacterSaveData {
 	
 	UPROPERTY(BlueprintReadOnly)
 	float CurrentHealth = 100.0f;
+	
+	UPROPERTY(BlueprintReadOnly)
+	FTransform Transform = FTransform();
 };
 
 USTRUCT()

@@ -4,14 +4,19 @@
 #include "Components/ArrowComponent.h"
 
 AEnemySpawner::AEnemySpawner() {
-	PrimaryActorTick.bCanEverTick = true;
-	CreateDefaultSubobject<UArrowComponent>(FName(TEXT("Arrow")));
+	UArrowComponent* ArrowComponent = CreateDefaultSubobject<UArrowComponent>(FName(TEXT("Arrow")));
+	RootComponent = ArrowComponent;
 }
 
 void AEnemySpawner::SpawnEnemy() {
+	if (!IsValid(EnemyType)) {
+		UE_LOG(LogTemp, Error, TEXT("Variable EnemyType in EnemySpawner %s was invalid, returning"), *(this->GetName()));
+		return;
+	}
+	
 	AEnemy* NewEnemy = GetWorld()->SpawnActor<AEnemy>(EnemyType, GetActorLocation(), GetActorRotation());
 	NewEnemy->OnDestroyed.AddUniqueDynamic(this, &AEnemySpawner::OnEnemyDestroyed);
-	ActiveEnemies.Add(NewEnemy);
+	ActiveEnemies.AddUnique(NewEnemy);
 }
 
 void AEnemySpawner::OnEnemyDestroyed(AActor* DestroyedActor) {

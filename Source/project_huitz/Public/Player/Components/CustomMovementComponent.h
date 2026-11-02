@@ -1,3 +1,5 @@
+// © 2026 Atlantic Games. All rights reserved.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -6,13 +8,13 @@
 
 UENUM(BlueprintType)
 enum class EMovementState : uint8 {
-    /** Standing on a surface with no velocity, not crouched. */
+    /** Standing on a surface with no velocity. */
 	None,
 
 	/** Walking on a surface. */
 	Walking,
 
-	/** Crouching, but more awesome. */
+	/** Sliding along a surface. */
 	Sliding,
 
 	/** Falling under the effects of gravity , such as after walking off the edge of a surface, or after jumping. */
@@ -22,7 +24,7 @@ enum class EMovementState : uint8 {
     Dashing
 };
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class UCustomMovementComponent : public UCharacterMovementComponent {
     GENERATED_BODY()
 

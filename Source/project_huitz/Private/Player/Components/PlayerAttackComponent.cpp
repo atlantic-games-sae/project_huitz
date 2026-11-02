@@ -22,11 +22,11 @@ void UPlayerAttackComponent::PerformAttack() {
 	
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 		UCameraComponent* Camera = GetOwner()->GetComponentByClass<UCameraComponent>();
-		FVector TraceEnd = Camera->GetForwardVector() * ActiveWeapon->Range;
+		FVector TraceEnd = Camera->GetComponentLocation() + Camera->GetForwardVector() * ActiveWeapon->Range;
 		FHitResult OutHit;
 		bool bHit = UKismetSystemLibrary::LineTraceSingle(
 			this, Camera->GetComponentLocation(), TraceEnd,
-			UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
+			UEngineTypes::ConvertToTraceType(ECC_Pawn), false,
 			{}, DrawDebugTrace, OutHit, true);
 		
 		AsGun->AmmoRemainingInClip--;
