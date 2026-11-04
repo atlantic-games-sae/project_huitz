@@ -42,6 +42,9 @@ public:
 	UPROPERTY(Category="Custom Movement|General", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float WalkingAcceleration;
 	
+	UPROPERTY(Category="Custom Movement|General", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
+	float AirControlAcceleration;
+	
 	UPROPERTY(Category="Custom Movement|Stamina", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0))
 	int TotalStaminaPoints;
 	UPROPERTY(Category="Custom Movement|Stamina", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0))
@@ -59,7 +62,7 @@ public:
 	UPROPERTY(Category="Custom Movement|Dashing", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1, Units="Seconds"))
 	float DashDuration;
 	UPROPERTY(Category="Custom Movement|Dashing", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
-	float DashVelocity;
+	float DashBoostVelocity;
 	
 	UPROPERTY(Category="Custom Movement|Deceleration", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float BrakingDeceleration;
@@ -76,8 +79,14 @@ public:
 	float WallJumpAllowedRange;
 	UPROPERTY(Category="Custom Movement|Wall Jumping", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
 	float WallJumpHorizontalKickStrength;
-	UPROPERTY(Category="Custom Movement|Wall Jumping", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax = 1, UIMax=1))
-	float WallJumpPercentageOfJumpVelocity;
+	UPROPERTY(Category="Custom Movement|Wall Jumping", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
+	float WallJumpPercentageJumpHeight;
+	UPROPERTY(Category="Custom Movement|Wall Jumping", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
+	float WallJumpKeepPreviousVelocityPercentage;
+	UPROPERTY(Category="Custom Movement|Wall Jumping", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
+	float WallJumpReducedAirControlTime;
+	UPROPERTY(Category="Custom Movement|Wall Jumping", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
+	float WallJumpReducedAirControlPercentage;
 
     UFUNCTION(BlueprintPure, Category="Custom Movement")
 	EMovementState GetMovementState() const;
@@ -151,4 +160,5 @@ private:
 	float SlideVelocity;
 
 	float ActiveDashTimer;
+	float ActiveWallJumpReducedAirControlTimer;
 };

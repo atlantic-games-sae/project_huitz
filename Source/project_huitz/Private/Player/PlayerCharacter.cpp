@@ -37,7 +37,7 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) 
 	Camera->SetRelativeLocation(FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight() / 2.0));
 	Camera->bUsePawnControlRotation = true;
 	
-	InteractionComponent = CreateDefaultSubobject<UPlayerInteractionComponent>(FName("InteractionComponent"));
+	InteractionComponent = CreateDefaultSubobject<UPlayerInteractionComponent>(FName("Interaction Component"));
 	
 	AttackComponent = CreateDefaultSubobject<UPlayerAttackComponent>(FName("AttackComponent"));
 }

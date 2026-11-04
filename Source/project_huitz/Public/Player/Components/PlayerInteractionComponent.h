@@ -27,9 +27,6 @@ protected:
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, UIMin=0, Units="Centimeters"))
 	float InteractionTraceRange;
 	
-	UPROPERTY(EditAnywhere, meta=(ClampMin=0, UIMin=0, Units="Centimeters"))
-	float InteractionTraceRadius;
-	
 	UPROPERTY(EditAnywhere)
 	bool bDebugInteractTrace;
 	

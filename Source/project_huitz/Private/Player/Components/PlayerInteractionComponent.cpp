@@ -11,7 +11,6 @@ UPlayerInteractionComponent::UPlayerInteractionComponent() {
 	bCanInteract = true;
 	
 	InteractionTraceRange = 200.0f; // 2m
-	InteractionTraceRadius = 10.0f; // 10cm
 }
 
 void UPlayerInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {

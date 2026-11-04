@@ -80,17 +80,21 @@ class UGun : public URangedWeapon {
 	GENERATED_BODY()
 	
 public:
+	UGun();
+	
 	/** How many shots this weapon can fire before needing to be reloaded */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0))
-	int AmmoPerClip = 12;
+	int AmmoPerClip ;
 	
-	int AmmoRemainingInClip = AmmoPerClip;
+	UPROPERTY()
+	int AmmoRemainingInClip;
 	
 	/** Whether this gun should continuously fire while the input is held (true), or only fire once (false) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bIsAutomatic = false;
+	bool bIsAutomatic;
 	
 	/** How long the player must wait in order to reload this gun */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, Units="Seconds"))
-	float TimeTakenToReload = 1.0f;
+	float TimeTakenToReload;
 };
+

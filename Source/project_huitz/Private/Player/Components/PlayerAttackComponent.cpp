@@ -90,6 +90,8 @@ void UPlayerAttackComponent::EquipWeapon(int WeaponIndex) {
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 		bDoesWeaponUseAmmo = true;
 		OnMaxAmmoChangedDelegate.Broadcast(AsGun->AmmoPerClip);
+		AsGun->AmmoRemainingInClip = AsGun->AmmoPerClip;
+		OnCurrentAmmoChangedDelegate.Broadcast(AsGun->AmmoRemainingInClip);
 	}
 	
 	OnActiveWeaponChangedDelegate.Broadcast(bDoesWeaponUseAmmo);

@@ -15,20 +15,22 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
 
     // Initialising variables
 
-    WalkingSpeed = 600.0f;
+    WalkingSpeed = 1150.0f;
     SlideBoost = 500.0f;
     
-    bSlideBoostChangesDirection = true;
+    bSlideBoostChangesDirection = false;
 
-    DashDuration = 0.2f;
-    DashVelocity = 1050.0f;
+    DashDuration = 0.15f;
+    DashBoostVelocity = 500.0f;
 
     DesiredMaxWalkSpeed = WalkingSpeed;
     MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, DesiredMaxWalkSpeed, this);
 
-    WalkingAcceleration = 1250.0f;
+    WalkingAcceleration = 6000.0f;
+    
+    AirControlAcceleration = 1750.0f;
 
-    BrakingDeceleration = 4000.0f;
+    BrakingDeceleration = 5000.0f;
     SlidingDeceleration = 450.0f;
     MinAirDeceleration = 50.0f;
     MaxAirDeceleration = 850.0f;
@@ -36,8 +38,11 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     MaxGroundDeceleration = 2250.0f;
 
     WallJumpAllowedRange = 16.0f;
-    WallJumpHorizontalKickStrength = 275.0f;
-    WallJumpPercentageOfJumpVelocity = 0.875f;
+    WallJumpHorizontalKickStrength = 350.0f;
+    WallJumpPercentageJumpHeight = 1.0f;
+    WallJumpKeepPreviousVelocityPercentage = 0.5f;
+    WallJumpReducedAirControlTime = 0.25f;
+    WallJumpReducedAirControlPercentage = 0.2f;
 
     EnableAirDeceleration = true;
     HasSlideBoosted = false;
@@ -49,7 +54,8 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     // Any variables inherited from CharacterMovementComponent that have their defaults overriden
     SetIsReplicatedByDefault(true);
     MaxWalkSpeed = WalkingSpeed;
-    AirControl = 0.9f;
+    JumpZVelocity = 1000.0f;
+    AirControl = 1.0f;
     bUseSeparateBrakingFriction = true;
     BrakingDecelerationWalking = BrakingDeceleration;
     BrakingDecelerationFalling = 0.0f;
@@ -69,6 +75,8 @@ void UCustomMovementComponent::BeginPlay() {
 
 void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
     if (CustomMovementState == EMovementState::Dashing) ActiveDashTimer -= DeltaTime;
+    
+    if (CustomMovementState == EMovementState::Falling && MaxAcceleration < AirControlAcceleration) ActiveWallJumpReducedAirControlTimer -= DeltaTime;
     
     if (CurrentStamina < TotalStaminaPoints) {
         if (TotalStaminaPoints - CurrentStamina < StaminaRegenPerSecond * DeltaTime) {
@@ -118,36 +126,33 @@ void UCustomMovementComponent::SetMovementState_Implementation(EMovementState Ne
             MaxAcceleration = 0.0f;
             BrakingDecelerationWalking = 0.0f;
             
-            {
+            if (!HasSlideBoosted && bSlideBoostChangesDirection) {
                 TObjectPtr<APlayerCharacter> PlayerCharacter = Cast<APlayerCharacter>(GetOwner());
                 if (IsValid(PlayerCharacter)) {
                     FVector2D CurrentMovementInput = PlayerCharacter->GetCurrentMovementInput();
-                    if (CurrentMovementInput != FVector2D::ZeroVector && !HasSlideBoosted && bSlideBoostChangesDirection) {
+                    if (CurrentMovementInput != FVector2D::ZeroVector) {
                         SlideDirection = UHelperFunctions::MovementInputToWorldSpace(CurrentMovementInput, PlayerCharacter->GetActorRotation().Yaw);
-                    } else {
-                        SlideDirection = GetHorizontalVelocity().GetSafeNormal();
-                    }
+                    } else SlideDirection = GetHorizontalVelocity().GetSafeNormal();
                 }
-            }
+            } else SlideDirection = GetHorizontalVelocity().GetSafeNormal();
+            
             MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, SlideDirection, this);
             
             if (!HasSlideBoosted) {
-                MaxWalkSpeed = FMath::Clamp(MaxWalkSpeed + SlideBoost, 0.0f, DashVelocity);
-                Velocity = FVector(SlideDirection.X, SlideDirection.Y, 0) * FMath::Clamp(GetHorizontalVelocity().Length() + SlideBoost, 0.0, DashVelocity);
+                MaxWalkSpeed = FMath::Clamp(MaxWalkSpeed + SlideBoost, 0.0f, WalkingSpeed + DashBoostVelocity);
+                Velocity = FVector(SlideDirection.X, SlideDirection.Y, 0) * FMath::Clamp(GetHorizontalVelocity().Length() + SlideBoost, 0.0, WalkingSpeed + DashBoostVelocity);
                 HasSlideBoosted = true;
                 MARK_PROPERTY_DIRTY_FROM_NAME(UCustomMovementComponent, HasSlideBoosted, this);
             }
         
             break;
         case EMovementState::Falling:
-            if (CustomMovementState == EMovementState::Sliding) {
-                MaxAcceleration = WalkingAcceleration;
-            }
+            MaxAcceleration = AirControlAcceleration;
             break;
         case EMovementState::Dashing:
-            MaxWalkSpeed = DashVelocity;
+            MaxWalkSpeed = WalkingSpeed + DashBoostVelocity;
             ActiveDashTimer = DashDuration;
-            Velocity = FVector(ActiveDashDirection.X, ActiveDashDirection.Y, 0).GetSafeNormal() * DashVelocity;
+            Velocity = FVector(ActiveDashDirection.X, ActiveDashDirection.Y, 0).GetSafeNormal() * (WalkingSpeed + DashBoostVelocity);
             BrakingDecelerationWalking = 0.0f;
             GravityScale = 0.0f;
             EnableAirDeceleration = false;
@@ -211,10 +216,14 @@ bool UCustomMovementComponent::TryWallJump(float CapsuleHalfHeight, float Capsul
 
     FVector DistanceFromWallHit = GetOwner()->GetActorLocation() - OutHit.ImpactPoint;
     FVector2D KickAwayFromWall = FVector2D(DistanceFromWallHit.X, DistanceFromWallHit.Y).GetSafeNormal() * WallJumpHorizontalKickStrength;
-    Velocity = FVector(Velocity.X + KickAwayFromWall.X,
-        Velocity.Y + KickAwayFromWall.Y,
-        JumpZVelocity * WallJumpPercentageOfJumpVelocity);
+    Velocity = FVector(Velocity.X * WallJumpKeepPreviousVelocityPercentage + KickAwayFromWall.X,
+        Velocity.Y * WallJumpKeepPreviousVelocityPercentage + KickAwayFromWall.Y,
+        JumpZVelocity * WallJumpPercentageJumpHeight);
     if (GetOwnerRole() == ROLE_AutonomousProxy) SetVelocity_Server(Velocity);
+    
+    MaxAcceleration = AirControlAcceleration * WallJumpReducedAirControlPercentage;
+    ActiveWallJumpReducedAirControlTimer = WallJumpReducedAirControlTime;
+    
     return true;
 }
 
@@ -247,15 +256,19 @@ void UCustomMovementComponent::PerformMovement(float DeltaTime) {
                 if (MovementMode == MOVE_Falling) SetMovementState(EMovementState::Falling);
                 else SetMovementState(EMovementState::Walking);
             } else {
-                Velocity = FVector(ActiveDashDirection.X, ActiveDashDirection.Y, 0).GetSafeNormal() * DashVelocity;
+                Velocity = FVector(ActiveDashDirection.X, ActiveDashDirection.Y, 0).GetSafeNormal() * (WalkingSpeed + DashBoostVelocity);
             }
             break;
         case EMovementState::Sliding:
             UpdateSlidingVelocity(DeltaTime);
             break;
         case EMovementState::Falling:
+            if (ActiveWallJumpReducedAirControlTimer <= 0) {
+                MaxAcceleration = AirControlAcceleration;
+            }
+            
             if (EnableAirDeceleration && PreTickHorizontalVelocityLength > WalkingSpeed) {
-                float AirDeceleration = FMath::Lerp(MinAirDeceleration, MaxAirDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(PreTickHorizontalVelocityLength, WalkingSpeed, DashVelocity)));
+                float AirDeceleration = FMath::Lerp(MinAirDeceleration, MaxAirDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(PreTickHorizontalVelocityLength, WalkingSpeed, DashBoostVelocity)));
                 Velocity = FVector(Velocity.X, Velocity.Y, 0).GetSafeNormal() * UHelperFunctions::FloatMoveTowards(PreTickHorizontalVelocityLength, 0, AirDeceleration * DeltaTime) + FVector(0, 0, Velocity.Z);
             }
             break;
@@ -273,7 +286,7 @@ void UCustomMovementComponent::UpdateMaxWalkSpeed(float DeltaTime) {
     } else { // Decelerating
         if (CustomMovementState == EMovementState::Sliding) MaxDelta = SlidingDeceleration;
         else if (CustomMovementState != EMovementState::Falling) {
-            MaxDelta = FMath::Lerp(MinGroundDeceleration, MaxGroundDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(GetHorizontalVelocity().Length(), 0, DashVelocity)));
+            MaxDelta = FMath::Lerp(MinGroundDeceleration, MaxGroundDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(GetHorizontalVelocity().Length(), 0, DashBoostVelocity)));
         }
     }
 
