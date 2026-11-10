@@ -29,6 +29,8 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     WalkingAcceleration = 6000.0f;
     
     AirControlAcceleration = 1750.0f;
+    
+    DefaultGravityScale = 1.0f;
 
     BrakingDeceleration = 5000.0f;
     SlidingDeceleration = 450.0f;
@@ -41,8 +43,10 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     WallJumpHorizontalKickStrength = 350.0f;
     WallJumpPercentageJumpHeight = 1.0f;
     WallJumpKeepPreviousVelocityPercentage = 0.5f;
-    WallJumpReducedAirControlTime = 0.25f;
-    WallJumpReducedAirControlPercentage = 0.2f;
+    WallJumpReducedAirControlTime = 0.05f;
+    WallJumpReducedAirControlPercentage = 0.5f;
+    
+    GroundSlamGravityMultiplier = 4.0f;
 
     EnableAirDeceleration = true;
     HasSlideBoosted = false;
@@ -54,7 +58,7 @@ UCustomMovementComponent::UCustomMovementComponent(const FObjectInitializer& Obj
     // Any variables inherited from CharacterMovementComponent that have their defaults overriden
     SetIsReplicatedByDefault(true);
     MaxWalkSpeed = WalkingSpeed;
-    JumpZVelocity = 1000.0f;
+    JumpZVelocity = 1250.0f;
     AirControl = 1.0f;
     bUseSeparateBrakingFriction = true;
     BrakingDecelerationWalking = BrakingDeceleration;
@@ -148,6 +152,11 @@ void UCustomMovementComponent::SetMovementState_Implementation(EMovementState Ne
             break;
         case EMovementState::Falling:
             MaxAcceleration = AirControlAcceleration;
+            GravityScale = DefaultGravityScale;
+            break;
+        case EMovementState::Slamming:
+            MaxAcceleration = 0.0f;
+            GravityScale = DefaultGravityScale * GroundSlamGravityMultiplier;
             break;
         case EMovementState::Dashing:
             MaxWalkSpeed = WalkingSpeed + DashBoostVelocity;
@@ -161,7 +170,6 @@ void UCustomMovementComponent::SetMovementState_Implementation(EMovementState Ne
             break;
     }
     if (NewState != EMovementState::Dashing) {
-        GravityScale = 1.0f;
         if (CustomMovementState != EMovementState::Dashing) EnableAirDeceleration = true;
     }
     
@@ -175,12 +183,14 @@ void UCustomMovementComponent::SetMovementState_Implementation(EMovementState Ne
 void UCustomMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) {
     Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 
-    if (CustomMovementState == EMovementState::Falling && MovementMode == MOVE_Walking) {
-        if (DesiredSlideState) SetMovementState_Server(EMovementState::Sliding);
-        else if (GetHorizontalVelocity().Length() > 0.0) SetMovementState(EMovementState::Walking);
-        else SetMovementState(EMovementState::None);
-    } else if (CustomMovementState != EMovementState::Falling && MovementMode == MOVE_Falling) {
-        SetMovementState(EMovementState::Falling);
+    if ((CustomMovementState == EMovementState::Falling || CustomMovementState == EMovementState::Slamming) && MovementMode == MOVE_Walking) {
+        if (GetHorizontalVelocity().Length() > 0.0) {
+            if (DesiredSlideState) SetMovementState_Server(EMovementState::Sliding);
+            else SetMovementState(EMovementState::Walking);
+        } else SetMovementState(EMovementState::None);
+    } else if (CustomMovementState != EMovementState::Falling && CustomMovementState != EMovementState::Slamming && MovementMode == MOVE_Falling) {
+        if (DesiredSlideState) SetMovementState(EMovementState::Slamming); 
+        else SetMovementState(EMovementState::Falling);
     }
 }
 
@@ -196,10 +206,11 @@ void UCustomMovementComponent::SetDesiredSlideState(bool value) {
 void UCustomMovementComponent::OnDesiredSlideStateChanged() {
     if (DesiredSlideState) {
         if (CustomMovementState == EMovementState::Walking) SetMovementState(EMovementState::Sliding);
+        else if (CustomMovementState == EMovementState::Falling) SetMovementState(EMovementState::Slamming);
     } else if (CustomMovementState == EMovementState::Sliding) {
         if (GetHorizontalVelocity().Length() > 0.0) SetMovementState(EMovementState::Walking);
         else SetMovementState(EMovementState::None);
-    }
+    } else if (CustomMovementState == EMovementState::Slamming) SetMovementState(EMovementState::Falling);
 }
 
 bool UCustomMovementComponent::TryWallJump(float CapsuleHalfHeight, float CapsuleRadius) {
@@ -245,7 +256,7 @@ void UCustomMovementComponent::PerformMovement(float DeltaTime) {
 
     UpdateMaxWalkSpeed(DeltaTime);
 
-    float PreTickHorizontalVelocityLength = FVector2D(Velocity).Length();
+    FVector PreTickVelocity = Velocity;
 
     Super::PerformMovement(DeltaTime);
     
@@ -267,9 +278,9 @@ void UCustomMovementComponent::PerformMovement(float DeltaTime) {
                 MaxAcceleration = AirControlAcceleration;
             }
             
-            if (EnableAirDeceleration && PreTickHorizontalVelocityLength > WalkingSpeed) {
-                float AirDeceleration = FMath::Lerp(MinAirDeceleration, MaxAirDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(PreTickHorizontalVelocityLength, WalkingSpeed, DashBoostVelocity)));
-                Velocity = FVector(Velocity.X, Velocity.Y, 0).GetSafeNormal() * UHelperFunctions::FloatMoveTowards(PreTickHorizontalVelocityLength, 0, AirDeceleration * DeltaTime) + FVector(0, 0, Velocity.Z);
+            if (EnableAirDeceleration && FVector2D(PreTickVelocity).Length() > WalkingSpeed) {
+                float AirDeceleration = FMath::Lerp(MinAirDeceleration, MaxAirDeceleration, FMath::Square(UHelperFunctions::GetAlphaInRange(FVector2D(PreTickVelocity).Length(), WalkingSpeed, DashBoostVelocity)));
+                Velocity = FVector(Velocity.X, Velocity.Y, 0).GetSafeNormal() * UHelperFunctions::FloatMoveTowards(FVector2D(PreTickVelocity).Length(), 0, AirDeceleration * DeltaTime) + FVector(0, 0, Velocity.Z);
             }
             break;
         default:

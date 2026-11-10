@@ -17,8 +17,11 @@ enum class EMovementState : uint8 {
 	/** Sliding along a surface. */
 	Sliding,
 
-	/** Falling under the effects of gravity , such as after walking off the edge of a surface, or after jumping. */
+	/** Falling under the effects of gravity, such as after walking off the edge of a surface, or after jumping. */
 	Falling,
+	
+	/** Falling extra fast by holding the 'slide' input whilst in the air. */
+	Slamming,
 
     /** Actively dashing in a horizontal direction. */
     Dashing
@@ -44,6 +47,9 @@ public:
 	
 	UPROPERTY(Category="Custom Movement|General", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecondSquared"))
 	float AirControlAcceleration;
+	
+	UPROPERTY(Category="Custom Movement|General", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0));
+	float DefaultGravityScale;
 	
 	UPROPERTY(Category="Custom Movement|Stamina", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0))
 	int TotalStaminaPoints;
@@ -87,6 +93,9 @@ public:
 	float WallJumpReducedAirControlTime;
 	UPROPERTY(Category="Custom Movement|Wall Jumping", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
 	float WallJumpReducedAirControlPercentage;
+	
+	UPROPERTY(Category="Custom Movement|Ground Slam", EditAnywhere, BlueprintReadWrite, meta=(ClampMin=1, UIMin=1))
+	float GroundSlamGravityMultiplier;
 
     UFUNCTION(BlueprintPure, Category="Custom Movement")
 	EMovementState GetMovementState() const;
