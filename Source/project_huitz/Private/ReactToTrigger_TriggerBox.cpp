@@ -6,7 +6,6 @@
 #include "Interfaces/ReactToTriggerInterface.h"
 #include "Player/PlayerCharacter.h"
 
-
 void AReactToTrigger_TriggerBox::BeginPlay() {
 	Super::BeginPlay();
 	GetCollisionComponent()->OnComponentBeginOverlap.AddUniqueDynamic(this, &AReactToTrigger_TriggerBox::OnCollisionComponentBeginOverlap);

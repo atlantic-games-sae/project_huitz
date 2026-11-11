@@ -7,10 +7,10 @@
 
 void FCustomMovementComponentDetailsCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
-    HideCategoryExcludingProperties(DetailBuilder, FName("Character Movement (General Settings)"), { FString("GravityScale"), FString("Mass") });
     HideCategoryExcludingProperties(DetailBuilder, FName("Character Movement: Walking"), { FString("MaxStepHeight"), FString("WalkableFloorAngle"), FString("GroundFriction") });
     HideCategoryExcludingProperties(DetailBuilder, FName("Character Movement: Jumping / Falling"), { FString("JumpZVelocity"), FString("BrakingDecelerationFalling") });
 
+    DetailBuilder.HideCategory(FName("Character Movement (General Settings)"));
     DetailBuilder.HideCategory(FName("Character Movement: Gravity"));
     DetailBuilder.HideCategory(FName("Character Movement: Swimming"));
     DetailBuilder.HideCategory(FName("Character Movement: Flying"));
