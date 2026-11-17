@@ -25,6 +25,9 @@ public:
 	TArray<TObjectPtr<AEnemy>> ActiveEnemies;
 	
 	UFUNCTION()
+	void OnEnemySpawned(APawn* SpawnedPawn);
+	
+	UFUNCTION()
 	void OnEnemyDestroyed(AActor* DestroyedActor);
 	
 	virtual void OnTrigger_Implementation() override;
