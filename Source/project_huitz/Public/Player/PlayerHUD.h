@@ -25,7 +25,10 @@ public:
 	void OnMaxAmmoChanged(int Value);
 	
 	UFUNCTION()
-	void OnActiveWeaponChanged(bool bDoesWeaponUseAmmo);
+	void OnActiveWeaponChanged(bool bNewShouldDisplayAmmo);
+	
+	UFUNCTION()
+	void OnAttackCooldownUpdated(float Value);
 	
 protected:
 	UPROPERTY(BlueprintReadOnly)
@@ -49,6 +52,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	bool bShouldDisplayAmmo;
 	
+	UPROPERTY(BlueprintReadOnly)
+	float AttackCooldownProgress;
+	
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnCurrentAmmoChanged")
 	void OnCurrentAmmoChanged_Event();
 	
@@ -57,4 +63,7 @@ protected:
 	
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnActiveWeaponChanged")
 	void OnActiveWeaponChanged_Event();
+	
+	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnAttackCooldownUpdated")
+	void OnAttackCooldownUpdated_Event();
 };

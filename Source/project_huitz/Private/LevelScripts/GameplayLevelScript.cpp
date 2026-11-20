@@ -3,7 +3,7 @@
 
 #include "LevelScripts/GameplayLevelScript.h"
 #include "CustomGameInstance.h"
-#include "HelperFunctions.h"
+#include "Libraries/HelperFunctions.h"
 #include "SaveSystem.h"
 #include "Player/PlayerCharacter.h"
 

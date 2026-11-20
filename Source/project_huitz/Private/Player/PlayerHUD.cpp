@@ -26,8 +26,14 @@ void UPlayerHUD::OnMaxAmmoChanged(int Value) {
 	OnMaxAmmoChanged_Event();
 }
 
-void UPlayerHUD::OnActiveWeaponChanged(bool bDoesWeaponUseAmmo) {
-	bShouldDisplayAmmo = bDoesWeaponUseAmmo;
+void UPlayerHUD::OnActiveWeaponChanged(bool bNewShouldDisplayAmmo) {
+	bShouldDisplayAmmo = bNewShouldDisplayAmmo;
 	
 	OnActiveWeaponChanged_Event();
+}
+
+void UPlayerHUD::OnAttackCooldownUpdated(float Value) {
+	AttackCooldownProgress = Value;
+	
+	OnAttackCooldownUpdated_Event();
 }

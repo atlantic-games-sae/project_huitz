@@ -2,7 +2,7 @@
 
 #include "UI/SaveSlotEntryWidgetBase.h"
 
-#include "HelperFunctions.h"
+#include "Libraries/HelperFunctions.h"
 #include "Components/ListViewBase.h"
 #include "LevelScripts/MainMenuLevelScript.h"
 #include "UI/SaveSelectionWidgetBase.h"

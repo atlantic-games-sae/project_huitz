@@ -3,7 +3,7 @@
 #include "Player/Components/CustomMovementComponent.h"
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "HelperFunctions.h"
+#include "Libraries/HelperFunctions.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
 #include "Player/PlayerCharacter.h"

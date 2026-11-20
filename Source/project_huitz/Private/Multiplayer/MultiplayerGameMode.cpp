@@ -2,7 +2,7 @@
 
 #include "Multiplayer/MultiplayerGameMode.h"
 
-#include "HelperFunctions.h"
+#include "Libraries/HelperFunctions.h"
 #include "Kismet/GameplayStatics.h"
 
 void AMultiplayerGameMode::BeginPlay() {

@@ -14,8 +14,8 @@
 class ACustomPlayerController;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, int, Health);
 
-class UCustomMovementComponent;
-class UPlayerAttackComponent;
+class UCustomMovementComponent; 
+class UBaseAttackComponent;
 
 UCLASS(Abstract)
 class PROJECT_HUITZ_API APlayerCharacter : public ACustomCharacterBase {
@@ -30,7 +30,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
-	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UCameraComponent* Camera;
 
 	virtual void Jump() override;
@@ -41,14 +41,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Movement")
 	void Dash();
 	
-	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
-	UPlayerAttackComponent* AttackComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UBaseAttackComponent* MyAttackComponent;
 	
-	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UCustomMovementComponent* MovementComponent;
 	
-	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
-	UPlayerInteractionComponent* InteractionComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPlayerInteractionComponent* MyInteractionComponent;
 	
 	FVector2D GetCurrentMovementInput() const { return CurrentMovementInput; }
 

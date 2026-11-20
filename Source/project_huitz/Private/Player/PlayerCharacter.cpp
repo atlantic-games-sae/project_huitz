@@ -5,8 +5,8 @@
 #include "Player/Components/CustomMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "HelperFunctions.h"
-#include "Player/Components/PlayerAttackComponent.h"
+#include "Libraries/HelperFunctions.h"
+#include "Player/Components/AttackComponent/BaseAttackComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/LocalPlayer.h"
@@ -32,14 +32,14 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) 
 
 	MovementComponent = static_cast<UCustomMovementComponent*>(GetCharacterMovement());
 
-	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
+	Camera = CreateDefaultSubobject<UCameraComponent>(FName(TEXT("Camera")));
 	Camera->SetupAttachment(GetCapsuleComponent());
 	Camera->SetRelativeLocation(FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight() / 2.0));
 	Camera->bUsePawnControlRotation = true;
 	
-	InteractionComponent = CreateDefaultSubobject<UPlayerInteractionComponent>(FName("Interaction Component"));
+	MyInteractionComponent = ObjectInitializer.CreateDefaultSubobject<UPlayerInteractionComponent>(this, FName(TEXT("InteractionComponent")));
 	
-	AttackComponent = CreateDefaultSubobject<UPlayerAttackComponent>(FName("AttackComponent"));
+	MyAttackComponent = ObjectInitializer.CreateDefaultSubobject<UBaseAttackComponent>(this, FName(TEXT("MyAttackComponent")));
 }
 
 void APlayerCharacter::BeginPlay() {
@@ -75,15 +75,16 @@ void APlayerCharacter::PossessedBy(AController* NewController) {
 		OnMaxHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxHealthChanged);
 		OnCurrentHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentHealthChanged);
 		
-		if (UGun* AsGun = Cast<UGun>(AttackComponent->ActiveWeapon)) {
+		if (UGun* AsGun = Cast<UGun>(MyAttackComponent->GetActiveWeapon())) {
 			InstancedHUDWidget->OnMaxAmmoChanged(AsGun->AmmoPerClip);
 			InstancedHUDWidget->OnCurrentAmmoChanged(AsGun->AmmoRemainingInClip);
-			InstancedHUDWidget->OnActiveWeaponChanged(true);
+			InstancedHUDWidget->OnActiveWeaponChanged(AsGun->AmmoPerClip > 1);
 		}
 		
-		AttackComponent->OnMaxAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxAmmoChanged);
-		AttackComponent->OnCurrentAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentAmmoChanged);
-		AttackComponent->OnActiveWeaponChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnActiveWeaponChanged);
+		MyAttackComponent->OnMaxAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxAmmoChanged);
+		MyAttackComponent->OnCurrentAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentAmmoChanged);
+		MyAttackComponent->OnActiveWeaponChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnActiveWeaponChanged);
+		MyAttackComponent->OnAttackCooldownUpdatedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnAttackCooldownUpdated);
 		
 		InstancedHUDWidget->AddToPlayerScreen();
 	}
@@ -152,12 +153,12 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Started, this, &APlayerCharacter::priv_Crouch);
 		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Completed, this, &APlayerCharacter::priv_UnCrouch);
 		
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, InteractionComponent, &UPlayerInteractionComponent::OnInteractInputDown);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, MyInteractionComponent, &UPlayerInteractionComponent::OnInteractInputDown);
 	
-		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Started, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputDown);
-		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Completed, AttackComponent, &UPlayerAttackComponent::OnPrimaryAttackInputReleased);
+		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Started, MyAttackComponent, &UBaseAttackComponent::OnPrimaryAttackInputDown);
+		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Completed, MyAttackComponent, &UBaseAttackComponent::OnPrimaryAttackInputReleased);
 		
-		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, AttackComponent, &UPlayerAttackComponent::OnReloadInputDown);
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, MyAttackComponent, &UBaseAttackComponent::OnReloadInputDown);
 		
 		EnhancedInputComponent->BindAction(PauseGameAction, ETriggerEvent::Started, GetCustomPlayerController()->PauseMenuComponent, &UPauseMenuComponent::PauseGame);
 	}

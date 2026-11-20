@@ -2,7 +2,7 @@
 
 #include "Player/Components/PauseMenuComponent.h"
 
-#include "HelperFunctions.h"
+#include "Libraries/HelperFunctions.h"
 #include "Kismet/GameplayStatics.h"
 
 void UPauseMenuComponent::PauseGame() {

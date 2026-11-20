@@ -4,29 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Libraries/DelegateLibrary.h"
 #include "Player/Weapons.h"
-#include "PlayerAttackComponent.generated.h"
+#include "BaseAttackComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIntValueChangedSignature, int, Value);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActiveWeaponChangedSignature, bool, bDoesWeaponUseAmmo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActiveWeaponChangedSignature, bool, bNewShouldDisplayAmmo);
 
-UCLASS(ClassGroup=(Custom), Blueprintable, meta=(BlueprintSpawnableComponent))
-class PROJECT_HUITZ_API UPlayerAttackComponent : public UActorComponent {
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+class PROJECT_HUITZ_API UBaseAttackComponent : public UActorComponent {
 	GENERATED_BODY()
 
 public:
-	UPlayerAttackComponent();
+	UBaseAttackComponent();
 	
 	virtual void BeginPlay() override;
-	
-	UPROPERTY(BlueprintReadOnly, Category="Weapons")
-	TObjectPtr<UWeapon> ActiveWeapon;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Weapons")
-	TArray<TSubclassOf<UWeapon>> OwnedWeapons;
-	
-	UFUNCTION(BlueprintCallable, Category="Weapons")
-	void GiveNewWeapon(TSubclassOf<UWeapon> NewWeapon, bool bShouldEquipWeapon);
 	
 	UFUNCTION(BlueprintCallable, Category="Weapons")
 	void EquipWeapon(int WeaponIndex);
@@ -39,10 +30,22 @@ public:
 	FOnIntValueChangedSignature OnCurrentAmmoChangedDelegate;
 	FOnIntValueChangedSignature OnMaxAmmoChangedDelegate;
 	FOnActiveWeaponChangedSignature OnActiveWeaponChangedDelegate;
+	FOnFloatValueChangedSignature OnAttackCooldownUpdatedDelegate;
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
+	UWeapon* GetActiveWeapon() { return ActiveWeapon; }
+	
 protected:
+	UPROPERTY(BlueprintReadOnly, Category="Weapons")
+	TObjectPtr<UWeapon> ActiveWeapon;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapons")
+	TArray<TSubclassOf<UWeapon>> OwnedWeapons;
+	
+	UFUNCTION(BlueprintCallable, Category="Weapons")
+	void GiveNewWeapon(TSubclassOf<UWeapon> NewWeapon, bool bShouldEquipWeapon);
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bDebugAttackTraces;
 	
@@ -52,7 +55,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnPrimaryAttackInputReleased")
 	void OnPrimaryAttackInputReleased_Event();
 	
-	virtual void PerformAttack();
+	virtual bool PerformAttack();
 	
 	virtual void PerformReload();
 	

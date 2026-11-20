@@ -4,9 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Libraries/DelegateLibrary.h"
 #include "CustomCharacterBase.generated.h"
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFloatValueChangedSignature, float, Value);
 
 UCLASS(Abstract)
 class PROJECT_HUITZ_API ACustomCharacterBase : public ACharacter {

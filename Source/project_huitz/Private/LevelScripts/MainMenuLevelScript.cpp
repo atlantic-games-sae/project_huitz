@@ -3,7 +3,7 @@
 #include "LevelScripts/MainMenuLevelScript.h"
 
 #include "CustomGameInstance.h"
-#include "HelperFunctions.h"
+#include "Libraries/HelperFunctions.h"
 #include "SaveSystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"

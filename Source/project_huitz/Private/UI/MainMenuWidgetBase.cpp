@@ -3,7 +3,7 @@
 #include "UI/MainMenuWidgetBase.h"
 #include "LevelScripts/MainMenuLevelScript.h"
 #include "CustomGameInstance.h"
-#include "HelperFunctions.h"
+#include "Libraries/HelperFunctions.h"
 
 AMainMenuLevelScript* UMainMenuWidgetBase::GetBackend() const {
 	return static_cast<AMainMenuLevelScript*>(GetWorld()->GetLevelScriptActor());
