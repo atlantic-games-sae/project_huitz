@@ -4,18 +4,18 @@
 
 #include "Libraries/HelperFunctions.h"
 #include "Camera/CameraComponent.h"
-#include "Enemies/Enemy.h"
+#include "Enemies/BaseEnemy.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 void UMarksmanAttackComponent::GiveNewWeapon(TSubclassOf<URangedWeapon> RangedWeapon, bool bShouldEquipWeapon) {
 	Super::GiveNewWeapon(RangedWeapon, bShouldEquipWeapon);
 }
 
-bool UMarksmanAttackComponent::PerformAttack() {
-	if (!Super::PerformAttack()) return false;
-	
+bool UMarksmanAttackComponent::BeginAttack() {
+	if (!Super::BeginAttack()) return false;
+
 	EDrawDebugTrace::Type DrawDebugTrace = bDebugAttackTraces ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
-	
+
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 		UCameraComponent* Camera = GetOwner()->GetComponentByClass<UCameraComponent>();
 		FVector TraceEnd = Camera->GetComponentLocation() + Camera->GetForwardVector() * ActiveWeapon->Range;
@@ -24,15 +24,15 @@ bool UMarksmanAttackComponent::PerformAttack() {
 			this, Camera->GetComponentLocation(), TraceEnd,
 			UEngineTypes::ConvertToTraceType(ECC_Pawn), false,
 			{}, DrawDebugTrace, OutHit, true);
-		
+
 		AsGun->AmmoRemainingInClip--;
 		OnCurrentAmmoChangedDelegate.Broadcast(AsGun->AmmoRemainingInClip);
-		
-		if (AsGun->AmmoRemainingInClip == 0) PerformReload();
-		
+
+		if (AsGun->AmmoRemainingInClip == 0) BeginReload();
+
 		if (!bHit) return true;
-		
-		if (AEnemy* HitEnemy = Cast<AEnemy>(OutHit.GetActor())) {
+
+		if (ABaseEnemy* HitEnemy = Cast<ABaseEnemy>(OutHit.GetActor())) {
 			float DamageToDeal = ActiveWeapon->DamagePerHit;
 			if (AsGun->bHasDamageFalloff) {
 				if (OutHit.Distance > AsGun->DamageFalloffInitialThreshold) {
@@ -45,10 +45,10 @@ bool UMarksmanAttackComponent::PerformAttack() {
 					}
 				}
 			}
-			
+
 			HitEnemy->TakeDamage(DamageToDeal);
 		}
 	}
-	
+
 	return true;
 }

@@ -7,8 +7,6 @@
 #include "MultiplayerGameState.generated.h"
 
 UCLASS()
-class PROJECT_HUITZ_API AMultiplayerGameState : public AGameStateBase
-{
+class PROJECT_HUITZ_API AMultiplayerGameState : public AGameStateBase {
 	GENERATED_BODY()
-	
 };

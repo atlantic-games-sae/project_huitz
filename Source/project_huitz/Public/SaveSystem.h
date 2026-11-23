@@ -11,14 +11,14 @@
 USTRUCT(BlueprintType)
 struct FGlobalSettings_SaveData {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	float MasterVolume = 1.0f;
 	UPROPERTY(BlueprintReadOnly)
 	float EffectsVolume = 1.0f;
 	UPROPERTY(BlueprintReadOnly)
 	float MusicVolume = 1.0f;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	int GraphicsQualityPreset = 1; // for example - 0,1,2,3 : low,medium,high,ultra
 };
@@ -26,10 +26,10 @@ struct FGlobalSettings_SaveData {
 USTRUCT(BlueprintType)
 struct FPlayerSettings_SaveData {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	float CameraFieldOfView = 75.0f;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	float MouseLookSensitivity = 1.0f;
 	UPROPERTY(BlueprintReadOnly)
@@ -39,10 +39,10 @@ struct FPlayerSettings_SaveData {
 USTRUCT(BlueprintType)
 struct FCharacterSaveData {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	float CurrentHealth = 100.0f;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	FTransform Transform = FTransform();
 };
@@ -50,7 +50,7 @@ struct FCharacterSaveData {
 USTRUCT()
 struct FBrawlerSaveData : public FCharacterSaveData {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TArray<TSubclassOf<UMeleeWeapon>> UnlockedWeapons = {};
 };
@@ -58,7 +58,7 @@ struct FBrawlerSaveData : public FCharacterSaveData {
 USTRUCT()
 struct FMarksmanSaveData : public FCharacterSaveData {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TArray<TSubclassOf<URangedWeapon>> UnlockedWeapons = {};
 };
@@ -66,7 +66,7 @@ struct FMarksmanSaveData : public FCharacterSaveData {
 USTRUCT(BlueprintType)
 struct FPickupSaveData {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TSubclassOf<APickup> Class = APickup::StaticClass();
 	UPROPERTY(BlueprintReadOnly)
@@ -76,10 +76,10 @@ struct FPickupSaveData {
 USTRUCT(BlueprintType)
 struct FLevelSaveData {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TSoftObjectPtr<UWorld> Level;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FPickupSaveData> ExtraPickups = {}; // Pickups that are not part of the level's default state
 	UPROPERTY(BlueprintReadOnly)
@@ -89,7 +89,7 @@ struct FLevelSaveData {
 UCLASS()
 class PROJECT_HUITZ_API UGlobalSettings_SaveGame : public USaveGame {
 	GENERATED_BODY()
-	
+
 public:
 	UPROPERTY(BlueprintReadOnly)
 	FGlobalSettings_SaveData GlobalSettings;
@@ -100,7 +100,7 @@ public:
 UCLASS()
 class PROJECT_HUITZ_API USaveSlot_SaveGame : public USaveGame {
 	GENERATED_BODY()
-	
+
 public:
 	UPROPERTY(BlueprintReadOnly)
 	float TotalPlayTime;

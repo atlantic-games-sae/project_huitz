@@ -9,7 +9,7 @@ APhysicalButton::APhysicalButton() {
 
 void APhysicalButton::Interact(UPlayerInteractionComponent* SourceComponent) {
 	Super::Interact(SourceComponent);
-	
+
 	for (TWeakObjectPtr Actor : ActorsToTrigger) {
 		if (Actor->Implements<UReactToTrigger>()) {
 			IReactToTrigger::Execute_OnTrigger(Actor.Get());

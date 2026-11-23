@@ -21,8 +21,7 @@ bool UCollisionLibrary::ConeTraceMulti(
 	TArray<FHitResult>& OutHits,
 	FLinearColor TraceColor,
 	FLinearColor TraceHitColor,
-	float DrawTime)
-{
+	float DrawTime) {
 	OutHits.Reset();
 
 	ECollisionChannel CollisionChannel = UEngineTypes::ConvertToCollisionChannel(TraceChannel);
@@ -31,8 +30,7 @@ bool UCollisionLibrary::ConeTraceMulti(
 	Params.AddIgnoredActors(ActorsToIgnore);
 
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-	if (!World)
-	{
+	if (!World) {
 		return false;
 	}
 
@@ -47,16 +45,14 @@ bool UCollisionLibrary::ConeTraceMulti(
 	World->SweepMultiByChannel(TempHitResults, Start, End, Direction.Quaternion(), CollisionChannel, SphereSweep, Params);
 
 	// Filter for hits that would be inside the cone.
-	for (FHitResult& HitResult : TempHitResults)
-	{
+	for (FHitResult& HitResult : TempHitResults) {
 		const FVector HitDirection = (HitResult.ImpactPoint - Start).GetSafeNormal();
 		const double Dot = FVector::DotProduct(Direction.Vector(), HitDirection);
 		// theta = arccos((A • B) / (|A|*|B|)). |A|*|B| = 1 because A and B are unit vectors.
 		const double DeltaAngle = FMath::Acos(Dot);
 
 		// Hit is outside the angle of the cone.
-		if (DeltaAngle > ConeHalfAngleRad)
-		{
+		if (DeltaAngle > ConeHalfAngleRad) {
 			continue;
 		}
 
@@ -65,8 +61,7 @@ bool UCollisionLibrary::ConeTraceMulti(
 		const double LengthAtAngle = ConeHeight / cos(DeltaAngle);
 
 		// Hit is beyond the cone. This can happen because we sweep with spheres, which results in a cap at the end of the sweep.
-		if (Distance > LengthAtAngle)
-		{
+		if (Distance > LengthAtAngle) {
 			continue;
 		}
 
@@ -74,8 +69,7 @@ bool UCollisionLibrary::ConeTraceMulti(
 	}
 
 #if ENABLE_DRAW_DEBUG
-	if (DrawDebugType != EDrawDebugTrace::None)
-	{
+	if (DrawDebugType != EDrawDebugTrace::None) {
 		// Cone trace.
 		const double ConeSlantHeight = FMath::Sqrt((ConeBaseRadius * ConeBaseRadius) + (ConeHeight * ConeHeight)); // s = sqrt(r^2 + h^2)
 		DrawDebugCone(World, Start, Direction.Vector(), ConeSlantHeight, ConeHalfAngleRad, ConeHalfAngleRad, 32, TraceColor.ToFColor(true), (DrawDebugType == EDrawDebugTrace::Persistent), DrawTime);
@@ -84,8 +78,7 @@ bool UCollisionLibrary::ConeTraceMulti(
 		// DrawDebugSweptSphere(World, Start, End, ConeBaseRadius, TraceColor.ToFColor(true), (DrawDebugType == EDrawDebugTrace::Persistent), DrawTime);
 
 		// Successful hits.
-		for (const FHitResult& Hit : OutHits)
-		{
+		for (const FHitResult& Hit : OutHits) {
 			DrawDebugLineTraceSingle(World, Hit.TraceStart, Hit.ImpactPoint, DrawDebugType, true, Hit, TraceHitColor, TraceHitColor, DrawTime);
 		}
 

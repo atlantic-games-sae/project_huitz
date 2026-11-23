@@ -14,7 +14,7 @@
 class ACustomPlayerController;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, int, Health);
 
-class UCustomMovementComponent; 
+class UCustomMovementComponent;
 class UBaseAttackComponent;
 
 UCLASS(Abstract)
@@ -24,12 +24,12 @@ class PROJECT_HUITZ_API APlayerCharacter : public ACustomCharacterBase {
 public:
 	// Sets default values for this character's properties
 	APlayerCharacter(const FObjectInitializer& ObjectInitializer);
-	
+
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UCameraComponent* Camera;
 
@@ -40,22 +40,28 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Movement")
 	void Dash();
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UBaseAttackComponent* MyAttackComponent;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UCustomMovementComponent* MovementComponent;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UPlayerInteractionComponent* MyInteractionComponent;
+
+	FVector2D GetCurrentMovementInput() const {
+		return CurrentMovementInput;
+	}
 	
-	FVector2D GetCurrentMovementInput() const { return CurrentMovementInput; }
+	void TeleportToLastCheckpoint();
+	
+	void RegisterCheckpoint(const FVector& CheckpointLocation, const float CheckpointYaw);
 
 protected:
 	UPROPERTY(Category="Input", EditDefaultsOnly)
 	UInputMappingContext* DefaultMappingContext;
-	
+
 	UPROPERTY(Category="Input", EditDefaultsOnly)
 	UInputAction* MoveAction;
 
@@ -79,10 +85,10 @@ protected:
 
 	UPROPERTY(Category="Input", EditDefaultsOnly)
 	UInputAction* ReloadAction;
-	
+
 	UPROPERTY(Category="Input", EditDefaultsOnly)
 	UInputAction* InteractAction;
-	
+
 	UPROPERTY(Category="Input", EditDefaultsOnly)
 	UInputAction* PauseGameAction;
 
@@ -90,30 +96,39 @@ protected:
 	float CharacterHeight;
 	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, ClampMax=0.5, UIMax=0.5))
 	float CapsuleRadiusProportionalToHeight;
-	
+
 	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, ClampMax=1, UIMax=1))
 	float SlidingHeightPercentage;
 	UPROPERTY(Category="Height", EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0, Units="CentimetersPerSecond"))
 	float HeightTransitionSpeed;
-	
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 
 	void AdjustHeight(float DeltaTime);
 	bool HasRoomToStand(float IntendedHeightDelta) const;
-	
+
 	UPROPERTY(Category="UI", EditDefaultsOnly, BlueprintReadOnly, DisplayName="Player HUD Widget Class")
 	TSubclassOf<UPlayerHUD> PlayerHUDWidgetClass = UPlayerHUD::StaticClass();
 
+	virtual void OnDeath() override;
+	
 private:
-	void priv_Crouch() { Crouch(); } // private alias for Crouch() that has a void() signature, rather than a void(bool) one, to allow binding it with the Enhanced Input System
-	void priv_UnCrouch() { UnCrouch(); }
+	void priv_Crouch() {
+		Crouch();
+	} // private alias for Crouch() that has a void() signature, rather than a void(bool) one, to allow binding it with the Enhanced Input System
+	void priv_UnCrouch() {
+		UnCrouch();
+	}
 
 	FVector2D CurrentMovementInput;
 
 	void ClearMovementInput() {
 		CurrentMovementInput = FVector2D().ZeroVector;
 	}
-	
+
 	ACustomPlayerController* GetCustomPlayerController() const;
+	
+	FVector LastCheckpointLocation;
+	float LastCheckpointYaw;
 };

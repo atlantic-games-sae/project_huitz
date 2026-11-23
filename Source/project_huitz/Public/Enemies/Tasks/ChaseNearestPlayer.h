@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enemies/Enemy.h"
 #include "Enemies/EnemyAIController.h"
 #include "Player/PlayerCharacter.h"
 #include "Blueprint/StateTreeTaskBlueprintBase.h"
+#include "Enemies/MeleeEnemy.h"
 #include "Kismet/GameplayStatics.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "ChaseNearestPlayer.generated.h"
@@ -14,59 +14,56 @@
 UCLASS()
 class PROJECT_HUITZ_API UChaseNearestPlayer : public UStateTreeTaskBlueprintBase {
 	GENERATED_BODY()
-	
+
 public:
 	UChaseNearestPlayer(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
-		bShouldCallTick = true; 
+		bShouldCallTick = true;
 	}
-	
+
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<AEnemy> EnemyPawn;
-	
+	TObjectPtr<AMeleeEnemy> EnemyPawn;
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<AEnemyAIController> AIController;
-	
-	UPROPERTY(EditAnywhere)
-	float StopRange;
-	
+
 protected:
 	UPROPERTY()
 	TArray<TObjectPtr<APlayerCharacter>> AllPlayers;
-	
+
 	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override {
 		TargetPlayer = nullptr;
 		FallbackResult = EStateTreeRunStatus::Running;
-		
+
 		TArray<AActor*> OutActors;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerCharacter::StaticClass(), OutActors);
 		for (AActor* Actor : OutActors) {
 			AllPlayers.AddUnique(Cast<APlayerCharacter>(Actor));
 		}
-		
+
 		PathFollowingDelegateHandle = AIController->GetPathFollowingComponent()->OnRequestFinished.AddUObject(this, &UChaseNearestPlayer::OnPathfindingRequestFinished);
-		
+
 		return PerformTargetSelectionLogic();
 	}
-	
+
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) override {
 		EStateTreeRunStatus Result = PerformTargetSelectionLogic();
 		if (Result != EStateTreeRunStatus::Running) return Result;
-		
+
 		return FallbackResult;
 	}
-	
+
 	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override {
 		AIController->GetPathFollowingComponent()->OnRequestFinished.Remove(PathFollowingDelegateHandle);
 	}
-	
+
 private:
 	FDelegateHandle PathFollowingDelegateHandle;
-	
+
 	UPROPERTY()
 	TObjectPtr<APlayerCharacter> TargetPlayer;
-	
+
 	EStateTreeRunStatus FallbackResult;
-	
+
 	void OnPathfindingRequestFinished(FAIRequestID RequestID, const FPathFollowingResult& Result) {
 		if (Result.IsSuccess()) {
 			FallbackResult = EStateTreeRunStatus::Succeeded;
@@ -76,7 +73,7 @@ private:
 			FallbackResult = EStateTreeRunStatus::Running;
 		}
 	}
-	
+
 	EStateTreeRunStatus PerformTargetSelectionLogic() {
 		bool bHasChangedTarget = false;
 		for (APlayerCharacter* Player : AllPlayers) {
@@ -93,10 +90,10 @@ private:
 				bHasChangedTarget = true;
 			}
 		}
-		
+
 		if (!bHasChangedTarget) return EStateTreeRunStatus::Running;
-		
-		switch (AIController->MoveToActor(TargetPlayer, StopRange)) {
+
+		switch (AIController->MoveToActor(TargetPlayer, EnemyPawn->ChaseStopDistance)) {
 			case EPathFollowingRequestResult::AlreadyAtGoal:
 				return EStateTreeRunStatus::Succeeded;
 			case EPathFollowingRequestResult::RequestSuccessful:

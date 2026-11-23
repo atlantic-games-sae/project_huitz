@@ -19,14 +19,14 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) 
 	CharacterHeight = 190.0f;
 	CapsuleRadiusProportionalToHeight = 0.15f;
 
-    SlidingHeightPercentage = 0.35f;
-    HeightTransitionSpeed = 750.0f;
+	SlidingHeightPercentage = 0.35f;
+	HeightTransitionSpeed = 750.0f;
 
 	MaxHealth = 100.0f;
 	CurrentHealth = MaxHealth;
 
 	CurrentMovementInput = FVector2D().ZeroVector;
-	
+
 	GetCapsuleComponent()->SetCapsuleHalfHeight(CharacterHeight / 2.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(CharacterHeight * CapsuleRadiusProportionalToHeight);
 
@@ -34,20 +34,20 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) 
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName(TEXT("Camera")));
 	Camera->SetupAttachment(GetCapsuleComponent());
-	Camera->SetRelativeLocation(FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight() / 2.0));
+	Camera->SetRelativeLocation(FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() / 2.0));
 	Camera->bUsePawnControlRotation = true;
-	
+
 	MyInteractionComponent = ObjectInitializer.CreateDefaultSubobject<UPlayerInteractionComponent>(this, FName(TEXT("InteractionComponent")));
-	
+
 	MyAttackComponent = ObjectInitializer.CreateDefaultSubobject<UBaseAttackComponent>(this, FName(TEXT("MyAttackComponent")));
 }
 
 void APlayerCharacter::BeginPlay() {
 	GetCapsuleComponent()->SetCapsuleHalfHeight(CharacterHeight / 2.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(CharacterHeight * CapsuleRadiusProportionalToHeight);
-	
+
 	Super::BeginPlay();
-	
+
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), StaticClass(), FoundActors);
 	FoundActors.Remove(this);
@@ -60,7 +60,7 @@ void APlayerCharacter::BeginPlay() {
 
 void APlayerCharacter::PossessedBy(AController* NewController) {
 	Super::PossessedBy(NewController);
-	
+
 	if (APlayerController* PlayerController = Cast<APlayerController>(NewController)) {
 		ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
 		if (auto* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer)) {
@@ -68,24 +68,24 @@ void APlayerCharacter::PossessedBy(AController* NewController) {
 		}
 		TObjectPtr<UPlayerHUD> InstancedHUDWidget = CreateWidget<UPlayerHUD, APlayerController*>(PlayerController, PlayerHUDWidgetClass);
 		if (!IsValid(InstancedHUDWidget)) return;
-		
+
 		InstancedHUDWidget->OnCurrentHealthChanged(CurrentHealth);
 		InstancedHUDWidget->OnMaxHealthChanged(MaxHealth);
-		
+
 		OnMaxHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxHealthChanged);
 		OnCurrentHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentHealthChanged);
-		
+
 		if (UGun* AsGun = Cast<UGun>(MyAttackComponent->GetActiveWeapon())) {
 			InstancedHUDWidget->OnMaxAmmoChanged(AsGun->AmmoPerClip);
 			InstancedHUDWidget->OnCurrentAmmoChanged(AsGun->AmmoRemainingInClip);
 			InstancedHUDWidget->OnActiveWeaponChanged(AsGun->AmmoPerClip > 1);
 		}
-		
+
 		MyAttackComponent->OnMaxAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxAmmoChanged);
 		MyAttackComponent->OnCurrentAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentAmmoChanged);
 		MyAttackComponent->OnActiveWeaponChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnActiveWeaponChanged);
 		MyAttackComponent->OnAttackCooldownUpdatedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnAttackCooldownUpdated);
-		
+
 		InstancedHUDWidget->AddToPlayerScreen();
 	}
 }
@@ -114,7 +114,7 @@ void APlayerCharacter::Look(const FInputActionValue& Value) {
 }
 
 void APlayerCharacter::Jump() {
-	EMovementState AllowedStates[] = { EMovementState::None, EMovementState::Walking, EMovementState::Sliding, EMovementState::Dashing };
+	EMovementState AllowedStates[] = {EMovementState::None, EMovementState::Walking, EMovementState::Sliding, EMovementState::Dashing};
 	bool bCanJump = false;
 
 	EMovementState MovementState = MovementComponent->GetMovementState();
@@ -152,21 +152,20 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Started, this, &APlayerCharacter::priv_Crouch);
 		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Completed, this, &APlayerCharacter::priv_UnCrouch);
-		
+
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, MyInteractionComponent, &UPlayerInteractionComponent::OnInteractInputDown);
-	
+
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Started, MyAttackComponent, &UBaseAttackComponent::OnPrimaryAttackInputDown);
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Completed, MyAttackComponent, &UBaseAttackComponent::OnPrimaryAttackInputReleased);
-		
+
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, MyAttackComponent, &UBaseAttackComponent::OnReloadInputDown);
-		
+
 		EnhancedInputComponent->BindAction(PauseGameAction, ETriggerEvent::Started, GetCustomPlayerController()->PauseMenuComponent, &UPauseMenuComponent::PauseGame);
 	}
 }
 
 // Called every frame
-void APlayerCharacter::Tick(float DeltaTime)
-{
+void APlayerCharacter::Tick(float DeltaTime) {
 	AdjustHeight(DeltaTime);
 
 	Super::Tick(DeltaTime);
@@ -181,8 +180,8 @@ void APlayerCharacter::AdjustHeight(float DeltaTime) {
 }
 
 bool APlayerCharacter::HasRoomToStand(float IntendedHeightDelta) const {
-	FVector Start = GetActorLocation() + FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-	FVector End = Start + FVector(0,0,IntendedHeightDelta);
+	FVector Start = GetActorLocation() + FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	FVector End = Start + FVector(0, 0, IntendedHeightDelta);
 	FHitResult OutHit;
 	bool bHit = UKismetSystemLibrary::SphereTraceSingle(
 		this, Start, End, GetCapsuleComponent()->GetScaledCapsuleRadius(),
@@ -196,13 +195,28 @@ ACustomPlayerController* APlayerCharacter::GetCustomPlayerController() const {
 }
 
 void APlayerCharacter::Crouch(bool bClientSimulation) {
-    MovementComponent->SetDesiredSlideState(true);
+	MovementComponent->SetDesiredSlideState(true);
 }
 
 void APlayerCharacter::UnCrouch(bool bClientSimulation) {
-    MovementComponent->SetDesiredSlideState(false);
+	MovementComponent->SetDesiredSlideState(false);
 }
 
 void APlayerCharacter::Dash() {
 	MovementComponent->Dash(CurrentMovementInput);
+}
+
+void APlayerCharacter::OnDeath() {
+	TeleportToLastCheckpoint();
+}
+
+void APlayerCharacter::TeleportToLastCheckpoint() {
+	GetMovementComponent()->Velocity = FVector(0,0,0);
+	SetActorLocation(LastCheckpointLocation);
+	GetCustomPlayerController()->SetControlRotation(FRotator(0, LastCheckpointYaw, 0));
+}
+
+void APlayerCharacter::RegisterCheckpoint(const FVector& CheckpointLocation, const float CheckpointYaw) {
+	LastCheckpointLocation = CheckpointLocation + FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	LastCheckpointYaw = CheckpointYaw;
 }

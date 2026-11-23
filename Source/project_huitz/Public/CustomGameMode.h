@@ -9,7 +9,7 @@
 UCLASS()
 class PROJECT_HUITZ_API ACustomGameMode : public AGameModeBase {
 	GENERATED_BODY()
-	
+
 public:
 	ACustomGameMode();
 };

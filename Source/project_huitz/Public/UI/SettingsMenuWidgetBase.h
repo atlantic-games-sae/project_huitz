@@ -10,6 +10,4 @@
 UCLASS(Abstract)
 class PROJECT_HUITZ_API USettingsMenuWidgetBase : public UWidgetBase {
 	GENERATED_BODY()
-	
-	
 };

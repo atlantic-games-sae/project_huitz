@@ -12,10 +12,10 @@ class AEnemySpawner;
 UCLASS(Abstract)
 class PROJECT_HUITZ_API ARoomController : public AActor, public IReactToTrigger {
 	GENERATED_BODY()
-	
+
 public:
 	virtual void OnTrigger_Implementation() override;
-	
+
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
 	TArray<TObjectPtr<AEnemySpawner>> EnemySpawners;
 };

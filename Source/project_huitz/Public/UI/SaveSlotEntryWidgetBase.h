@@ -10,14 +10,14 @@
 UCLASS(Abstract)
 class PROJECT_HUITZ_API USaveSlotEntryWidgetBase : public UMainMenuWidgetBase, public IUserObjectListEntry {
 	GENERATED_BODY()
-	
+
 protected:
 	UFUNCTION(BlueprintCallable, Category="Save Slots")
 	void ClearSaveSlot(int SaveSlotIndex);
-	
+
 private:
 	UFUNCTION()
 	void OnClearSaveSlotConfirmation(bool bResult);
-	
+
 	int TargetSlotToClear;
 };

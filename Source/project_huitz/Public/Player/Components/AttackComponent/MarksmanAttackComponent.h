@@ -12,7 +12,7 @@ class PROJECT_HUITZ_API UMarksmanAttackComponent : public UBaseAttackComponent {
 
 public:
 	void GiveNewWeapon(TSubclassOf<URangedWeapon> RangedWeapon, bool bShouldEquipWeapon);
-	
+
 protected:
-	virtual bool PerformAttack() override;
+	virtual bool BeginAttack() override;
 };

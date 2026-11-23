@@ -12,15 +12,15 @@
 
 void AMainMenuLevelScript::BeginPlay() {
 	Super::BeginPlay();
-	
+
 	if (!IsValid(GetCustomPlayerController())) return;
-	
+
 	GetCustomPlayerController()->SetInputMode(FInputModeUIOnly());
 	GetCustomPlayerController()->SetShowMouseCursor(true);
-	
+
 	BackgroundWidget_Ref = CreateWidget<UUserWidget>(GetCustomPlayerController(), BackgroundWidgetClass);
 	BackgroundWidget_Ref->AddToViewport();
-	
+
 	ShowBaseMainMenu();
 }
 
@@ -47,7 +47,7 @@ void AMainMenuLevelScript::AttemptOnlineLogin() {
 
 void AMainMenuLevelScript::ChangeForegroundWidget(TSubclassOf<UMainMenuWidgetBase> WidgetClass) {
 	RemoveForegroundWidget();
-	
+
 	ForegroundWidget_Ref = CreateWidget<UMainMenuWidgetBase>(GetWorld()->GetFirstPlayerController(), WidgetClass);
 	ForegroundWidget_Ref->AddToViewport(1);
 }
@@ -70,20 +70,20 @@ void AMainMenuLevelScript::RemoveBackgroundWidget() {
 
 void AMainMenuLevelScript::BeginLocalPlaySession(int SaveSlotIndex) {
 	if (!IsValid(GetCustomPlayerController())) return;
-	
+
 	RemoveForegroundWidget();
 	RemoveBackgroundWidget();
-	
+
 	GetCustomPlayerController()->SetInputMode(FInputModeGameOnly());
 	GetCustomPlayerController()->SetShowMouseCursor(false);
-	
+
 	UHelperFunctions::GetCustomGameInstance(this)->ActiveSaveSlotIndex = SaveSlotIndex;
 	UHelperFunctions::GetCustomGameInstance(this)->LoadGameFromActiveSlot();
 }
 
 void AMainMenuLevelScript::BeginOnlineLogin() {
 	if (!IsValid(GetCustomPlayerController())) return;
-	
+
 	GetCustomPlayerController()->Login();
 }
 
@@ -94,9 +94,9 @@ void AMainMenuLevelScript::BeginOnlinePlaySession(int SaveSlotIndex, FString Lob
 	} else {
 		UGameplayStatics::OpenLevelBySoftObjectPtr(this, UHelperFunctions::GetCustomGameInstance(this)->GameLevels[0]);
 	}
-	
+
 	if (!IsValid(GetCustomPlayerController())) return;
-	
+
 	GetCustomPlayerController()->CreateLobby(LobbyId);
 }
 
@@ -106,13 +106,13 @@ ACustomPlayerController* AMainMenuLevelScript::GetCustomPlayerController() const
 
 void AMainMenuLevelScript::OnSuccessfulLogin() {
 	UnregisterLoginEventListeners();
-	
+
 	ChangeForegroundWidget(LobbySelectWidgetClass);
 }
 
 void AMainMenuLevelScript::OnFailedLogin() {
 	UnregisterLoginEventListeners();
-	
+
 	ShowBaseMainMenu();
 }
 
@@ -120,5 +120,3 @@ void AMainMenuLevelScript::UnregisterLoginEventListeners() {
 	GetCustomPlayerController()->OnSuccessfulLogin.RemoveDynamic(this, &AMainMenuLevelScript::OnSuccessfulLogin);
 	GetCustomPlayerController()->OnFailedLogin.RemoveDynamic(this, &AMainMenuLevelScript::OnFailedLogin);
 }
-
-

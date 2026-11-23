@@ -3,4 +3,4 @@
 #include "project_huitz.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, project_huitz, "project_huitz" );
+IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, project_huitz, "project_huitz");

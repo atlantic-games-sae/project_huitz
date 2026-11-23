@@ -8,21 +8,21 @@ UBaseAttackComponent::UBaseAttackComponent() {
 
 void UBaseAttackComponent::BeginPlay() {
 	Super::BeginPlay();
-	
+
 	EquipWeapon(0);
 }
 
-bool UBaseAttackComponent::PerformAttack() {
+bool UBaseAttackComponent::BeginAttack() {
 	if (ActiveCooldown <= 0.0) {
 		ActiveCooldown = ActiveWeapon->AttackCooldown;
 		OnAttackCooldownUpdatedDelegate.Broadcast(ActiveCooldown);
-		OnPerformAttack();
+		OnBeginAttack();
 		return true;
 	}
 	return false;
 }
 
-void UBaseAttackComponent::PerformReload() {
+void UBaseAttackComponent::BeginReload() {
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 		ActiveCooldown = AsGun->TimeTakenToReload;
 		OnAttackCooldownUpdatedDelegate.Broadcast(ActiveCooldown / ActiveWeapon->AttackCooldown);
@@ -32,14 +32,14 @@ void UBaseAttackComponent::PerformReload() {
 
 void UBaseAttackComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
+
 	if (ActiveCooldown > 0.0f) {
 		ActiveCooldown -= DeltaTime;
 		OnAttackCooldownUpdatedDelegate.Broadcast(ActiveCooldown / ActiveWeapon->AttackCooldown);
 	}
-	
+
 	if (!IsValid(ActiveWeapon)) return;
-	
+
 	if (ActiveCooldown <= 0.0f) {
 		if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 			if (bIsReloading) {
@@ -47,59 +47,59 @@ void UBaseAttackComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 				OnCurrentAmmoChangedDelegate.Broadcast(AsGun->AmmoRemainingInClip);
 				bIsReloading = false;
 			}
-			
-			if (AsGun->bIsAutomatic && bIsPrimaryAttackInputHeld) PerformAttack();
+
+			if (AsGun->bIsAutomatic && bIsPrimaryAttackInputHeld) BeginAttack();
 		}
 	}
 }
 
 void UBaseAttackComponent::GiveNewWeapon(TSubclassOf<UWeapon> NewWeapon, bool bShouldEquipWeapon) {
 	if (OwnedWeapons.Contains(NewWeapon)) return;
-	
+
 	int WeaponIndex = OwnedWeapons.Add(NewWeapon);
 	if (bShouldEquipWeapon) EquipWeapon(WeaponIndex);
 }
 
 void UBaseAttackComponent::EquipWeapon(int WeaponIndex) {
 	if (WeaponIndex < 0 || WeaponIndex >= OwnedWeapons.Num()) return;
-	
+
 	ActiveWeapon = NewObject<UWeapon>(this, OwnedWeapons[WeaponIndex]);
-	
+
 	bool bDoesWeaponUseAmmo = false;
-	
+
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 		bDoesWeaponUseAmmo = true;
 		OnMaxAmmoChangedDelegate.Broadcast(AsGun->AmmoPerClip);
 		AsGun->AmmoRemainingInClip = AsGun->AmmoPerClip;
 		OnCurrentAmmoChangedDelegate.Broadcast(AsGun->AmmoRemainingInClip);
 	}
-	
+
 	OnActiveWeaponChangedDelegate.Broadcast(bDoesWeaponUseAmmo);
 }
 
 void UBaseAttackComponent::OnPrimaryAttackInputDown() {
 	OnPrimaryAttackInputDown_Event();
-	
+
 	bIsPrimaryAttackInputHeld = true;
-	
+
 	if (!IsValid(ActiveWeapon) || ActiveCooldown > 0.0f) return;
-	
+
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
-		if (AsGun->AmmoRemainingInClip > 0) PerformAttack();
-		else PerformReload();
-	} else PerformAttack();
+		if (AsGun->AmmoRemainingInClip > 0) BeginAttack();
+		else BeginReload();
+	} else BeginAttack();
 }
 
 void UBaseAttackComponent::OnPrimaryAttackInputReleased() {
 	OnPrimaryAttackInputReleased_Event();
-	
+
 	bIsPrimaryAttackInputHeld = false;
 }
 
 void UBaseAttackComponent::OnReloadInputDown() {
 	if (UGun* AsGun = Cast<UGun>(ActiveWeapon)) {
 		if (AsGun->AmmoRemainingInClip < AsGun->AmmoPerClip) {
-			PerformReload();
+			BeginReload();
 		}
 	}
 }

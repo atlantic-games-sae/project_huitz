@@ -12,10 +12,10 @@ class UPauseMenuComponent;
 UCLASS(Abstract)
 class PROJECT_HUITZ_API UPauseMenuWidgetBase : public UWidgetBase {
 	GENERATED_BODY()
-	
+
 protected:
 	UFUNCTION(BlueprintPure, Category="Pause Menu")
 	UPauseMenuComponent* GetBackend() const;
-	
+
 	virtual TObjectPtr<UConfirmationDialogWidgetBase> CreateConfirmationDialog() const override;
 };

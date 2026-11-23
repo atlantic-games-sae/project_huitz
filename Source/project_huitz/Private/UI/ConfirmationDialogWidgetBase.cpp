@@ -4,7 +4,7 @@
 
 void UConfirmationDialogWidgetBase::NativeOnInitialized() {
 	Super::NativeOnInitialized();
-	
+
 	OnConfirmationComplete.AddUniqueDynamic(this, &UConfirmationDialogWidgetBase::RemoveFromParentOnConfirmationComplete);
 }
 

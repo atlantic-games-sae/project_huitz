@@ -7,15 +7,15 @@
 
 UPlayerInteractionComponent::UPlayerInteractionComponent() {
 	PrimaryComponentTick.bCanEverTick = true;
-	
+
 	bCanInteract = true;
-	
+
 	InteractionTraceRange = 200.0f; // 2m
 }
 
 void UPlayerInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
+
 	if (bCanInteract) {
 		AInteractableObject* NewTargetInteractable = PerformInteractionTrace();
 		if (NewTargetInteractable != TargetInteractableObject) {
@@ -30,20 +30,20 @@ TObjectPtr<AInteractableObject> UPlayerInteractionComponent::PerformInteractionT
 	UCameraComponent* Camera = GetOwner()->GetComponentByClass<UCameraComponent>();
 	FVector TraceEnd = Camera->GetForwardVector() * InteractionTraceRange + Camera->GetComponentLocation();
 	EDrawDebugTrace::Type DrawDebugTrace = bDebugInteractTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
-	
+
 	FHitResult OutHit;
 	bool bHit = UKismetSystemLibrary::LineTraceSingle(
 		this, Camera->GetComponentLocation(), TraceEnd,
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false, {}, DrawDebugTrace, OutHit, true);
-	
+
 	if (!bHit) return nullptr;
-	
+
 	return Cast<AInteractableObject>(OutHit.GetActor());
 }
 
 void UPlayerInteractionComponent::OnInteractInputDown() {
 	if (!IsValid(TargetInteractableObject)) return;
-	
+
 	TargetInteractableObject->Interact(this);
 }

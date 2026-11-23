@@ -10,6 +10,6 @@ public class project_huitzTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 
-		ExtraModuleNames.AddRange( new string[] { "project_huitz" } );
+		ExtraModuleNames.AddRange(new string[] { "project_huitz" });
 	}
 }

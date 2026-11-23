@@ -12,7 +12,7 @@ class PROJECT_HUITZ_API UBrawlerAttackComponent : public UBaseAttackComponent {
 
 public:
 	void GiveNewWeapon(TSubclassOf<UMeleeWeapon> MeleeWeapon, bool bShouldEquipWeapon);
-	
+
 protected:
-	virtual bool PerformAttack() override;
+	virtual bool BeginAttack() override;
 };

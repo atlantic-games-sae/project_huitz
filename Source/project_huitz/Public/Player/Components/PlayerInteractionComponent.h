@@ -14,28 +14,28 @@ class PROJECT_HUITZ_API UPlayerInteractionComponent : public UActorComponent {
 
 public:
 	UPlayerInteractionComponent();
-	
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable)
 	void OnInteractInputDown();
-	
+
 	UPROPERTY(BlueprintReadWrite)
 	bool bCanInteract;
-	
+
 protected:
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, UIMin=0, Units="Centimeters"))
 	float InteractionTraceRange;
-	
+
 	UPROPERTY(EditAnywhere)
 	bool bDebugInteractTrace;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterialInterface* TargetHighlightMaterial;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AInteractableObject> TargetInteractableObject;
-	
+
 private:
 	TObjectPtr<AInteractableObject> PerformInteractionTrace() const;
 };

@@ -10,6 +10,6 @@ public class project_huitzEditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 
-		ExtraModuleNames.AddRange( new string[] { "project_huitz" } );
+		ExtraModuleNames.AddRange(new string[] { "project_huitz" });
 	}
 }

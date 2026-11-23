@@ -8,9 +8,9 @@
 void UPauseMenuComponent::PauseGame() {
 	GetPlayerController()->SetInputMode(FInputModeUIOnly());
 	GetPlayerController()->SetShowMouseCursor(true);
-	
+
 	UGameplayStatics::SetGamePaused(this, true);
-	
+
 	CreateBackgroundWidget();
 	ShowBasePauseMenu();
 }
@@ -26,9 +26,9 @@ void UPauseMenuComponent::ShowBasePauseMenu() {
 void UPauseMenuComponent::ResumeGame() {
 	GetPlayerController()->SetInputMode(FInputModeGameOnly());
 	GetPlayerController()->SetShowMouseCursor(false);
-	
+
 	UGameplayStatics::SetGamePaused(this, false);
-	
+
 	RemoveForegroundWidget();
 	RemoveBackgroundWidget();
 }
@@ -42,14 +42,14 @@ void UPauseMenuComponent::QuitToMainMenu() {
 
 void UPauseMenuComponent::ChangeForegroundWidget(TSubclassOf<UPauseMenuWidgetBase> WidgetClass) {
 	RemoveForegroundWidget();
-	
+
 	ForegroundWidget_Ref = CreateWidget<UPauseMenuWidgetBase>(GetPlayerController(), WidgetClass);
 	ForegroundWidget_Ref->AddToViewport(1);
 }
 
 void UPauseMenuComponent::CreateBackgroundWidget() {
 	RemoveBackgroundWidget();
-	
+
 	BackgroundWidget_Ref = CreateWidget<UUserWidget>(GetPlayerController(), BackgroundWidgetClass);
 	BackgroundWidget_Ref->AddToViewport();
 }

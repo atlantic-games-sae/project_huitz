@@ -9,10 +9,9 @@
 class APlayerCharacter;
 
 UCLASS()
-class PROJECT_HUITZ_API AMultiplayerGameMode : public ACustomGameMode
-{
+class PROJECT_HUITZ_API AMultiplayerGameMode : public ACustomGameMode {
 	GENERATED_BODY()
-	
+
 protected:
 	virtual void BeginPlay() override;
 };

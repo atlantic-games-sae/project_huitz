@@ -12,9 +12,9 @@ class PROJECT_HUITZ_API APhysicalButton : public AInteractableObject {
 
 public:
 	APhysicalButton();
-	
+
 	virtual void Interact(UPlayerInteractionComponent* SourceComponent) override;
-	
+
 	/** Objects must implement the ReactToTrigger interface, otherwise nothing will happen */
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
 	TArray<TObjectPtr<AActor>> ActorsToTrigger;

@@ -11,7 +11,7 @@ class UConfirmationDialogWidgetBase;
 UCLASS(Abstract)
 class PROJECT_HUITZ_API UWidgetBase : public UUserWidget {
 	GENERATED_BODY()
-	
+
 protected:
 	virtual TObjectPtr<UConfirmationDialogWidgetBase> CreateConfirmationDialog() const;
 };

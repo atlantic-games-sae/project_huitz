@@ -1,6 +1,6 @@
 ﻿// © 2026 Atlantic Games. All rights reserved.
 
-#include "ReactToTrigger_TriggerBox.h"
+#include "TriggerBoxes/ReactToTrigger_TriggerBox.h"
 
 #include "Components/ShapeComponent.h"
 #include "Interfaces/ReactToTriggerInterface.h"

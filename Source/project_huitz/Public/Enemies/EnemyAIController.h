@@ -13,7 +13,7 @@ class PROJECT_HUITZ_API AEnemyAIController : public AAIController {
 
 public:
 	AEnemyAIController();
-	
+
 protected:
 	UPROPERTY(Category="Components", EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UStateTreeAIComponent> StateTreeAI;

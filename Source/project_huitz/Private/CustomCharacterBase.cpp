@@ -6,7 +6,7 @@
 ACustomCharacterBase::ACustomCharacterBase(const FObjectInitializer& ObjectInitializer) {
 	PrimaryActorTick.bCanEverTick = true;
 	// GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-	
+
 	MaxHealth = 50.0f;
 	CurrentHealth = MaxHealth;
 }
@@ -14,14 +14,18 @@ ACustomCharacterBase::ACustomCharacterBase(const FObjectInitializer& ObjectIniti
 void ACustomCharacterBase::TakeDamage(float DamageTaken) {
 	CurrentHealth -= DamageTaken;
 	OnCurrentHealthChangedDelegate.Broadcast(CurrentHealth);
-	
+
 	if (CurrentHealth <= 0) {
 		OnDeath();
 	}
-	
+
 	OnDamageTaken(DamageTaken);
 }
 
 void ACustomCharacterBase::OnDeath() {
 	OnDeath_Event();
+}
+
+void ACustomCharacterBase::Kill() {
+	TakeDamage(CurrentHealth);
 }

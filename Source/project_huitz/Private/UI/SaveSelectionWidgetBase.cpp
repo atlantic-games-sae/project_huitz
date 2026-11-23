@@ -7,23 +7,23 @@
 
 USaveSlotDisplayInfo* USaveSelectionWidgetBase::ConvertSaveGameToDisplayInfo(int SlotIndex, const USaveSlot_SaveGame* SaveGame) {
 	USaveSlotDisplayInfo* ReturnValue = NewObject<USaveSlotDisplayInfo>();
-	
+
 	if (!IsValid(SaveGame)) {
 		ReturnValue->bIsEmptySlot = true;
 	} else {
 		ReturnValue->SlotIndex = SlotIndex;
 		ReturnValue->TotalPlayTimeHours = FMath::RoundHalfFromZero(SaveGame->TotalPlayTime / 36.0f) / 10.0f;
 	}
-	
+
 	return ReturnValue;
 }
 
 USaveSlotDisplayInfo* USaveSelectionWidgetBase::GetEmptySlotDisplayInfo(int SlotIndex) {
 	USaveSlotDisplayInfo* ReturnValue = NewObject<USaveSlotDisplayInfo>();
-	
+
 	ReturnValue->bIsEmptySlot = true;
 	ReturnValue->SlotIndex = SlotIndex;
-	
+
 	return ReturnValue;
 }
 

@@ -13,25 +13,28 @@ class PROJECT_HUITZ_API ACustomCharacterBase : public ACharacter {
 
 public:
 	ACustomCharacterBase(const FObjectInitializer& ObjectInitializer);
-	
+
 	UFUNCTION(BlueprintCallable)
 	virtual void TakeDamage(float DamageTaken);
-	
+
 	FOnFloatValueChangedSignature OnCurrentHealthChangedDelegate;
 	FOnFloatValueChangedSignature OnMaxHealthChangedDelegate;
 	
+	UFUNCTION(BlueprintCallable)
+	void Kill();
+
+protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0))
 	float MaxHealth;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	float CurrentHealth;
 	
-protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnDamageTaken(float DamageTaken);
-	
-	void OnDeath();
-	
+
+	virtual void OnDeath();
+
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnDeath")
 	void OnDeath_Event();
 };

@@ -10,7 +10,7 @@ APickup::APickup() {
 
 void APickup::BeginPlay() {
 	Super::BeginPlay();
-	
+
 	TriggerBox->OnComponentBeginOverlap.AddUniqueDynamic(this, &APickup::OnBeginOverlap);
 }
 
