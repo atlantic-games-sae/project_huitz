@@ -9,13 +9,11 @@
 
 void AGameplayLevelScript::BeginPlay() {
 	Super::BeginPlay();
-	if (!IsValid(UHelperFunctions::GetCustomGameInstance(this)->GetMarksmanCharacter()) ||
-		!IsValid(UHelperFunctions::GetCustomGameInstance(this)->GetBrawlerCharacter())) {
-		UHelperFunctions::GetCustomGameInstance(this)->SpawnPlayerCharacters(0, 1);
-	}
+	
+	UHelperFunctions::GetCustomGameInstance(this)->OnGameplayLevelBeginPlay();
 }
 
 void AGameplayLevelScript::LoadFromLevelSaveData(FLevelSaveData& SaveData) {
-	if (SaveData.Level.LoadSynchronous()->GetCurrentLevel() != GetLevel()) return;
+	if (UHelperFunctions::GetCustomGameInstance(this)->GameLevels[SaveData.LevelIndex]->GetCurrentLevel() != GetLevel()) return;
 	// do stuff with pickups data to apply the level state from the save data struct
 }

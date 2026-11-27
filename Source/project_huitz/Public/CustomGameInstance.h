@@ -3,10 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SaveSystem.h"
 #include "Engine/GameInstance.h"
 #include "UI/ConfirmationDialogWidgetBase.h"
 #include "CustomGameInstance.generated.h"
 
+class ACustomPlayerController;
 class APlayerCharacter;
 class USaveSlot_SaveGame;
 
@@ -15,6 +17,8 @@ class PROJECT_HUITZ_API UCustomGameInstance : public UGameInstance {
 	GENERATED_BODY()
 
 public:
+	UCustomGameInstance();
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<TSoftObjectPtr<UWorld>> GameLevels;
 
@@ -38,6 +42,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Saving/Loading")
 	void LoadGameFromActiveSlot();
+	
+	void LoadAndApplyWithFallback();
+	
+	void ApplyFromActiveSlot();
 
 	UFUNCTION(BlueprintCallable, Category="Saving/Loading")
 	void ClearSaveSlot(int SaveSlotIndex);
@@ -46,25 +54,26 @@ public:
 	TSubclassOf<UConfirmationDialogWidgetBase> ConfirmationDialogWidgetClass;
 
 	UFUNCTION(BlueprintCallable)
-	void SpawnPlayerCharacters(APlayerController* MarksmanPlayerController, APlayerController* BrawlerPlayerController);
-
-	void SpawnPlayerCharacters(int MarksmanPlayerControllerIndex, int BrawlerPlayerControllerIndex);
-
-	APlayerCharacter* GetMarksmanCharacter() {
-		return MarksmanCharacter_Ref;
-	}
-
-	APlayerCharacter* GetBrawlerCharacter() {
-		return BrawlerCharacter_Ref;
-	}
+	void SpawnPlayerCharacters();
+	
+	UFUNCTION(BlueprintCallable)
+	void RegisterCheckpointForAllPlayers(FVector CheckpointLocation, float CheckpointYaw);
+	
+	UFUNCTION(BlueprintCallable)
+	void UpdatePlaytime();
+	
+	UFUNCTION()
+	void PlayerDiedInCombat();
+	
+	void OnGameplayLevelBeginPlay();
 
 protected:
-	void UpdateTimestampOfLastSave();
+	void StartPlaytimeTracking();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MustImplement="/Script/project_huitz.MarksmanCharacter"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<APlayerCharacter> MarksmanCharacterClass;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MustImplement="/Script/project_huitz.BrawlerCharacter"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<APlayerCharacter> BrawlerCharacterClass;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -72,7 +81,17 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<APlayerCharacter> BrawlerCharacter_Ref;
+	
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<ACustomPlayerController> MarksmanPlayerController;
+	
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<ACustomPlayerController> BrawlerPlayerController;
 
 private:
-	double TimestampOfLastSave;
-};
+	double PlaytimeComparisonValue;
+	
+	APlayerController* GetFirstAvailableController() const;
+	
+	void FallbackRegisterCheckpoint(FCharacterSaveData* TargetSaveData, const FVector& CheckpointLocation, float CheckpointYaw);
+}; 

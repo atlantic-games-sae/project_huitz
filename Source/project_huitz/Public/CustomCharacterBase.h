@@ -14,6 +14,8 @@ class PROJECT_HUITZ_API ACustomCharacterBase : public ACharacter {
 public:
 	ACustomCharacterBase(const FObjectInitializer& ObjectInitializer);
 
+	virtual void BeginPlay() override;
+	
 	UFUNCTION(BlueprintCallable)
 	virtual void TakeDamage(float DamageTaken);
 
@@ -22,6 +24,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void Kill();
+	
+	float GetCurrentHealth() const { return CurrentHealth; }
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin=0, UIMin=0))

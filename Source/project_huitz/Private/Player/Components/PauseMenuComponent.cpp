@@ -44,14 +44,14 @@ void UPauseMenuComponent::ChangeForegroundWidget(TSubclassOf<UPauseMenuWidgetBas
 	RemoveForegroundWidget();
 
 	ForegroundWidget_Ref = CreateWidget<UPauseMenuWidgetBase>(GetPlayerController(), WidgetClass);
-	ForegroundWidget_Ref->AddToViewport(1);
+	ForegroundWidget_Ref->AddToPlayerScreen(1);
 }
 
 void UPauseMenuComponent::CreateBackgroundWidget() {
 	RemoveBackgroundWidget();
 
 	BackgroundWidget_Ref = CreateWidget<UUserWidget>(GetPlayerController(), BackgroundWidgetClass);
-	BackgroundWidget_Ref->AddToViewport();
+	BackgroundWidget_Ref->AddToPlayerScreen();
 }
 
 void UPauseMenuComponent::RemoveForegroundWidget() {

@@ -7,7 +7,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "Libraries/HelperFunctions.h"
 #include "Player/Components/AttackComponent/BaseAttackComponent.h"
-#include "Blueprint/UserWidget.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
@@ -23,7 +22,6 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) 
 	HeightTransitionSpeed = 750.0f;
 
 	MaxHealth = 100.0f;
-	CurrentHealth = MaxHealth;
 
 	CurrentMovementInput = FVector2D().ZeroVector;
 
@@ -40,6 +38,8 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer) 
 	MyInteractionComponent = ObjectInitializer.CreateDefaultSubobject<UPlayerInteractionComponent>(this, FName(TEXT("InteractionComponent")));
 
 	MyAttackComponent = ObjectInitializer.CreateDefaultSubobject<UBaseAttackComponent>(this, FName(TEXT("MyAttackComponent")));
+	
+	PlayerHUDWidgetClass = UPlayerHUD::StaticClass();
 }
 
 void APlayerCharacter::BeginPlay() {
@@ -56,38 +56,58 @@ void APlayerCharacter::BeginPlay() {
 		TargetActor->GetCapsuleComponent()->MoveIgnoreActors.AddUnique(this);
 	}
 	GetCapsuleComponent()->MoveIgnoreActors = FoundActors;
+	
+	OnPlayerDiedDelegate.AddUniqueDynamic(UHelperFunctions::GetCustomGameInstance(this), &UCustomGameInstance::PlayerDiedInCombat);
+	
+	LastCheckpointLocation = GetActorLocation();
+	LastCheckpointYaw = GetActorRotation().Yaw;
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController) {
 	Super::PossessedBy(NewController);
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(NewController)) {
-		ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
-		if (auto* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer)) {
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-		TObjectPtr<UPlayerHUD> InstancedHUDWidget = CreateWidget<UPlayerHUD, APlayerController*>(PlayerController, PlayerHUDWidgetClass);
-		if (!IsValid(InstancedHUDWidget)) return;
-
-		InstancedHUDWidget->OnCurrentHealthChanged(CurrentHealth);
-		InstancedHUDWidget->OnMaxHealthChanged(MaxHealth);
-
-		OnMaxHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxHealthChanged);
-		OnCurrentHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentHealthChanged);
-
-		if (UGun* AsGun = Cast<UGun>(MyAttackComponent->GetActiveWeapon())) {
-			InstancedHUDWidget->OnMaxAmmoChanged(AsGun->AmmoPerClip);
-			InstancedHUDWidget->OnCurrentAmmoChanged(AsGun->AmmoRemainingInClip);
-			InstancedHUDWidget->OnActiveWeaponChanged(AsGun->AmmoPerClip > 1);
-		}
-
-		MyAttackComponent->OnMaxAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxAmmoChanged);
-		MyAttackComponent->OnCurrentAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentAmmoChanged);
-		MyAttackComponent->OnActiveWeaponChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnActiveWeaponChanged);
-		MyAttackComponent->OnAttackCooldownUpdatedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnAttackCooldownUpdated);
-
-		InstancedHUDWidget->AddToPlayerScreen();
+	APlayerController* PlayerController = Cast<APlayerController>(NewController);
+	if (!IsValid(PlayerController)) return;
+	
+	ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
+	if (auto* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer)) {
+		Subsystem->AddMappingContext(DefaultMappingContext, 0);
 	}
+	
+	ACustomPlayerController* CustomPlayerController = Cast<ACustomPlayerController>(PlayerController);
+	if (!IsValid(CustomPlayerController)) return;
+	
+	CustomPlayerController->ClearDeathMessageWidget();
+	
+	UPlayerHUD* InstancedHUDWidget = CustomPlayerController->CreatePlayerHUDWidget(PlayerHUDWidgetClass);
+	if (!IsValid(InstancedHUDWidget)) return;
+
+	InstancedHUDWidget->OnCurrentHealthChanged(CurrentHealth);
+	InstancedHUDWidget->OnMaxHealthChanged(MaxHealth);
+
+	OnMaxHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxHealthChanged);
+	OnCurrentHealthChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentHealthChanged);
+
+	if (UCustomMovementComponent* CustomMovementComponent = Cast<UCustomMovementComponent>(GetMovementComponent())) {
+		InstancedHUDWidget->OnCurrentStaminaChanged(CustomMovementComponent->CurrentStamina);
+		InstancedHUDWidget->OnMaxStaminaChanged(CustomMovementComponent->TotalStaminaPoints);
+	
+		CustomMovementComponent->OnCurrentStaminaChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentStaminaChanged);
+		CustomMovementComponent->OnMaxStaminaChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxStaminaChanged);
+	}
+
+	if (UGun* AsGun = Cast<UGun>(MyAttackComponent->GetActiveWeapon())) {
+		InstancedHUDWidget->OnMaxAmmoChanged(AsGun->AmmoPerClip);
+		InstancedHUDWidget->OnCurrentAmmoChanged(AsGun->AmmoRemainingInClip);
+		InstancedHUDWidget->OnActiveWeaponChanged(AsGun->AmmoPerClip > 1);
+	} else {
+		InstancedHUDWidget->OnActiveWeaponChanged(false);
+	}
+
+	MyAttackComponent->OnMaxAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnMaxAmmoChanged);
+	MyAttackComponent->OnCurrentAmmoChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnCurrentAmmoChanged);
+	MyAttackComponent->OnActiveWeaponChangedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnActiveWeaponChanged);
+	MyAttackComponent->OnAttackCooldownUpdatedDelegate.AddUniqueDynamic(InstancedHUDWidget, &UPlayerHUD::OnAttackCooldownUpdated);
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value) {
@@ -207,10 +227,23 @@ void APlayerCharacter::Dash() {
 }
 
 void APlayerCharacter::OnDeath() {
-	TeleportToLastCheckpoint();
+	if (UHelperFunctions::GetCustomGameplayGameMode(this)->bIsInCombat) {
+		bIsDead = true;
+		GetCustomPlayerController()->CreateDeathMessageWidget(DeathMessageWidgetClass);
+		OnPlayerDiedDelegate.Broadcast();
+		Destroy();
+	} else {
+		RespawnAtLastCheckpoint();
+	}
 }
 
-void APlayerCharacter::TeleportToLastCheckpoint() {
+void APlayerCharacter::RespawnAtLastCheckpoint() {
+	GetCustomPlayerController()->ClearDeathMessageWidget();
+	
+	CurrentHealth = MaxHealth;
+	OnCurrentHealthChangedDelegate.Broadcast(CurrentHealth);
+	bIsDead = false;
+	
 	GetMovementComponent()->Velocity = FVector(0,0,0);
 	SetActorLocation(LastCheckpointLocation);
 	GetCustomPlayerController()->SetControlRotation(FRotator(0, LastCheckpointYaw, 0));
@@ -219,4 +252,17 @@ void APlayerCharacter::TeleportToLastCheckpoint() {
 void APlayerCharacter::RegisterCheckpoint(const FVector& CheckpointLocation, const float CheckpointYaw) {
 	LastCheckpointLocation = CheckpointLocation + FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
 	LastCheckpointYaw = CheckpointYaw;
+	
+	UHelperFunctions::GetCustomGameInstance(this)->SaveGameToActiveSlot();
+}
+
+void APlayerCharacter::LoadPlayerSaveData(const FCharacterSaveData& SaveData) {
+	CurrentHealth = SaveData.CurrentHealth;
+	SetActorTransform(SaveData.Transform);
+	LastCheckpointLocation = SaveData.Transform.GetLocation();
+	LastCheckpointYaw = FRotator(SaveData.Transform.GetRotation()).Yaw;
+	
+	for (TSubclassOf Weapon : SaveData.UnlockedWeapons) {
+		MyAttackComponent->GiveNewWeapon(Weapon, false);
+	}
 }

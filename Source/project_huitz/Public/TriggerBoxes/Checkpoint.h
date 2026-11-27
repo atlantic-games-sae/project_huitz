@@ -19,4 +19,7 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UArrowComponent> ArrowComponent;
+	
+	UPROPERTY(Category="Checkpoint", EditAnywhere, BlueprintReadOnly)
+	bool bAutoApplyToBothPlayers; 
 };

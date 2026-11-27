@@ -11,8 +11,11 @@
 #include "Player/PlayerHUD.h"
 #include "PlayerCharacter.generated.h"
 
+struct FCharacterSaveData;
 class ACustomPlayerController;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedSignature, int, Health);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerDiedSignature);
 
 class UCustomMovementComponent;
 class UBaseAttackComponent;
@@ -54,9 +57,22 @@ public:
 		return CurrentMovementInput;
 	}
 	
-	void TeleportToLastCheckpoint();
+	void RespawnAtLastCheckpoint();
 	
 	void RegisterCheckpoint(const FVector& CheckpointLocation, const float CheckpointYaw);
+	
+	bool GetIsDead() const { return bIsDead; }
+	
+	FOnPlayerDiedSignature OnPlayerDiedDelegate;
+	
+	void LoadPlayerSaveData(const FCharacterSaveData& SaveData);
+	
+	FTransform GetLastCheckpointTransform() const {
+		FTransform ReturnValue = FTransform();
+		ReturnValue.SetLocation(LastCheckpointLocation);
+		ReturnValue.SetRotation(FRotator(0,LastCheckpointYaw,0).Quaternion());
+		return ReturnValue;
+	}
 
 protected:
 	UPROPERTY(Category="Input", EditDefaultsOnly)
@@ -109,14 +125,21 @@ protected:
 	bool HasRoomToStand(float IntendedHeightDelta) const;
 
 	UPROPERTY(Category="UI", EditDefaultsOnly, BlueprintReadOnly, DisplayName="Player HUD Widget Class")
-	TSubclassOf<UPlayerHUD> PlayerHUDWidgetClass = UPlayerHUD::StaticClass();
+	TSubclassOf<UPlayerHUD> PlayerHUDWidgetClass;
 
 	virtual void OnDeath() override;
 	
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsDead;
+	
+	UPROPERTY(Category="UI", EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<UUserWidget> DeathMessageWidgetClass;
+	
 private:
+	// private aliases that have a void() signature, rather than void(bool), to allow binding with the Enhanced Input System
 	void priv_Crouch() {
 		Crouch();
-	} // private alias for Crouch() that has a void() signature, rather than a void(bool) one, to allow binding it with the Enhanced Input System
+	}
 	void priv_UnCrouch() {
 		UnCrouch();
 	}

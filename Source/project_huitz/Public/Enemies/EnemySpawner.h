@@ -8,6 +8,8 @@
 #include "Interfaces/ReactToTriggerInterface.h"
 #include "EnemySpawner.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAllEnemiesDestroyedSignature);
+
 UCLASS(Abstract)
 class PROJECT_HUITZ_API AEnemySpawner : public AActor, public IReactToTrigger {
 	GENERATED_BODY()
@@ -25,10 +27,9 @@ public:
 	TArray<TObjectPtr<ABaseEnemy>> ActiveEnemies;
 
 	UFUNCTION()
-	void OnEnemySpawned(APawn* SpawnedPawn);
-
-	UFUNCTION()
 	void OnEnemyDestroyed(AActor* DestroyedActor);
+	
+	FOnAllEnemiesDestroyedSignature OnAllEnemiesDestroyedDelegate;
 
 	virtual void OnTrigger_Implementation() override;
 };

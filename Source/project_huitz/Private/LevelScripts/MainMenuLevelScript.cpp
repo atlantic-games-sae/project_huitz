@@ -24,8 +24,7 @@ void AMainMenuLevelScript::BeginPlay() {
 	ShowBaseMainMenu();
 }
 
-void AMainMenuLevelScript::ShowSaveSlotSelectionMenu(bool bIsOnline) {
-	CurrentFlowType = bIsOnline ? EFlowType::Online : EFlowType::Local;
+void AMainMenuLevelScript::ShowSaveSlotSelectionMenu() {
 	ChangeForegroundWidget(SaveSlotSelectionWidgetClass);
 }
 
@@ -34,15 +33,7 @@ void AMainMenuLevelScript::ShowSettingsMenu() {
 }
 
 void AMainMenuLevelScript::ShowBaseMainMenu() {
-	CurrentFlowType = EFlowType::None;
 	ChangeForegroundWidget(MainMenuWidgetClass);
-}
-
-void AMainMenuLevelScript::AttemptOnlineLogin() {
-	GetCustomPlayerController()->OnSuccessfulLogin.AddUniqueDynamic(this, &AMainMenuLevelScript::OnSuccessfulLogin);
-	GetCustomPlayerController()->OnFailedLogin.AddUniqueDynamic(this, &AMainMenuLevelScript::OnFailedLogin);
-	RemoveForegroundWidget();
-	GetCustomPlayerController()->Login();
 }
 
 void AMainMenuLevelScript::ChangeForegroundWidget(TSubclassOf<UMainMenuWidgetBase> WidgetClass) {
@@ -78,45 +69,9 @@ void AMainMenuLevelScript::BeginLocalPlaySession(int SaveSlotIndex) {
 	GetCustomPlayerController()->SetShowMouseCursor(false);
 
 	UHelperFunctions::GetCustomGameInstance(this)->ActiveSaveSlotIndex = SaveSlotIndex;
-	UHelperFunctions::GetCustomGameInstance(this)->LoadGameFromActiveSlot();
-}
-
-void AMainMenuLevelScript::BeginOnlineLogin() {
-	if (!IsValid(GetCustomPlayerController())) return;
-
-	GetCustomPlayerController()->Login();
-}
-
-void AMainMenuLevelScript::BeginOnlinePlaySession(int SaveSlotIndex, FString LobbyId) {
-	USaveSlot_SaveGame* SaveGame = Cast<USaveSlot_SaveGame>(UGameplayStatics::LoadGameFromSlot(UHelperFunctions::GetCustomGameInstance(this)->SaveSlotNames[SaveSlotIndex], 0));
-	if (IsValid(SaveGame)) {
-		UGameplayStatics::OpenLevelBySoftObjectPtr(this, SaveGame->LevelSaveData.Level);
-	} else {
-		UGameplayStatics::OpenLevelBySoftObjectPtr(this, UHelperFunctions::GetCustomGameInstance(this)->GameLevels[0]);
-	}
-
-	if (!IsValid(GetCustomPlayerController())) return;
-
-	GetCustomPlayerController()->CreateLobby(LobbyId);
+	UHelperFunctions::GetCustomGameInstance(this)->LoadAndApplyWithFallback();
 }
 
 ACustomPlayerController* AMainMenuLevelScript::GetCustomPlayerController() const {
 	return static_cast<ACustomPlayerController*>(GetWorld()->GetFirstPlayerController());
-}
-
-void AMainMenuLevelScript::OnSuccessfulLogin() {
-	UnregisterLoginEventListeners();
-
-	ChangeForegroundWidget(LobbySelectWidgetClass);
-}
-
-void AMainMenuLevelScript::OnFailedLogin() {
-	UnregisterLoginEventListeners();
-
-	ShowBaseMainMenu();
-}
-
-void AMainMenuLevelScript::UnregisterLoginEventListeners() {
-	GetCustomPlayerController()->OnSuccessfulLogin.RemoveDynamic(this, &AMainMenuLevelScript::OnSuccessfulLogin);
-	GetCustomPlayerController()->OnFailedLogin.RemoveDynamic(this, &AMainMenuLevelScript::OnFailedLogin);
 }

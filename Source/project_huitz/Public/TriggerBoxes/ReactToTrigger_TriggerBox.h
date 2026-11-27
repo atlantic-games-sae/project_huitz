@@ -13,8 +13,8 @@ class PROJECT_HUITZ_API AReactToTrigger_TriggerBox : public ATriggerBox {
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditInstanceOnly)
-	TObjectPtr<AActor> ActorToTrigger;
+	UPROPERTY(Category="React-To-Trigger Trigger Box", EditInstanceOnly)
+	TSet<TObjectPtr<AActor>> ActorsToTrigger;
 
 private:
 	UFUNCTION()

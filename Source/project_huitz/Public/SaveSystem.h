@@ -45,22 +45,9 @@ struct FCharacterSaveData {
 
 	UPROPERTY(BlueprintReadOnly)
 	FTransform Transform = FTransform();
-};
-
-USTRUCT()
-struct FBrawlerSaveData : public FCharacterSaveData {
-	GENERATED_BODY()
-
+	
 	UPROPERTY(BlueprintReadOnly)
-	TArray<TSubclassOf<UMeleeWeapon>> UnlockedWeapons = {};
-};
-
-USTRUCT()
-struct FMarksmanSaveData : public FCharacterSaveData {
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadOnly)
-	TArray<TSubclassOf<URangedWeapon>> UnlockedWeapons = {};
+	TArray<TSubclassOf<UWeapon>> UnlockedWeapons = {};
 };
 
 USTRUCT(BlueprintType)
@@ -78,7 +65,7 @@ struct FLevelSaveData {
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly)
-	TSoftObjectPtr<UWorld> Level;
+	int LevelIndex = 0;
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FPickupSaveData> ExtraPickups = {}; // Pickups that are not part of the level's default state
@@ -107,9 +94,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FPlayerSettings_SaveData SecondaryPlayerSettings;
 	UPROPERTY(BlueprintReadOnly)
-	FBrawlerSaveData BrawlerSaveData;
+	FCharacterSaveData BrawlerSaveData;
 	UPROPERTY(BlueprintReadOnly)
-	FMarksmanSaveData MarksmanSaveData;
+	FCharacterSaveData MarksmanSaveData;
 	UPROPERTY(BlueprintReadOnly)
 	FLevelSaveData LevelSaveData;
 };

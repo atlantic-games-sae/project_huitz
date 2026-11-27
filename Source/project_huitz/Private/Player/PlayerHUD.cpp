@@ -37,3 +37,15 @@ void UPlayerHUD::OnAttackCooldownUpdated(float Value) {
 
 	OnAttackCooldownUpdated_Event();
 }
+
+void UPlayerHUD::OnCurrentStaminaChanged(float Value) {
+	CurrentStamina = Value;
+	
+	OnCurrentStaminaChanged_Event();
+}
+
+void UPlayerHUD::OnMaxStaminaChanged(int Value) {
+	MaxStamina = Value;
+	
+	OnMaxStaminaChanged_Event();
+}

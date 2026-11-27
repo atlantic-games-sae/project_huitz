@@ -13,11 +13,5 @@ class PROJECT_HUITZ_API ADeathBox : public ATriggerBox {
 	GENERATED_BODY()
 	
 public:
-	ADeathBox();
-	
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
-	
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<ACustomCharacterBase> TargetCharacterClass;
 };

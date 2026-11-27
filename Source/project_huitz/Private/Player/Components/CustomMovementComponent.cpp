@@ -73,6 +73,7 @@ void UCustomMovementComponent::BeginPlay() {
 	Super::BeginPlay();
 
 	CurrentStamina = TotalStaminaPoints;
+	OnCurrentStaminaChangedDelegate.Broadcast(CurrentStamina);
 
 	SetMovementState(EMovementState::Walking);
 }
@@ -86,6 +87,8 @@ void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		if (TotalStaminaPoints - CurrentStamina < StaminaRegenPerSecond * DeltaTime) {
 			CurrentStamina = TotalStaminaPoints;
 		} else CurrentStamina += StaminaRegenPerSecond * DeltaTime;
+		
+		OnCurrentStaminaChangedDelegate.Broadcast(CurrentStamina);
 	}
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -322,6 +325,7 @@ void UCustomMovementComponent::Dash(FVector2D InputDirection) {
 	if (CurrentStamina < 1.0f) return;
 
 	CurrentStamina -= 1.0f;
+	OnCurrentStaminaChangedDelegate.Broadcast(CurrentStamina);
 
 	PerformDash(InputDirection);
 

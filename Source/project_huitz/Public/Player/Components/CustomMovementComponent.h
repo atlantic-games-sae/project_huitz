@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Libraries/DelegateLibrary.h"
 #include "CustomMovementComponent.generated.h"
 
 UENUM(BlueprintType)
@@ -111,6 +112,9 @@ public:
 	virtual bool TryWallJump(float CapsuleHalfHeight, float CapsuleRadius);
 
 	virtual void Dash(FVector2D InputDirection);
+	
+	FOnFloatValueChangedSignature OnCurrentStaminaChangedDelegate;
+	FOnIntValueChangedSignature OnMaxStaminaChangedDelegate;
 
 protected:
 	virtual void PerformMovement(float DeltaTime) override;

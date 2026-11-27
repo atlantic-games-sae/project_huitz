@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "CustomGameInstance.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameModes/GameplayGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
 #include "HelperFunctions.generated.h"
@@ -46,5 +48,14 @@ public:
 	UFUNCTION(BlueprintPure, Category="Helper Functions")
 	static UCustomGameInstance* GetCustomGameInstance(const UObject* WorldContextObject) {
 		return static_cast<UCustomGameInstance*>(UGameplayStatics::GetGameInstance(WorldContextObject));
+	}
+	
+	static AGameplayGameMode* GetCustomGameplayGameMode(const UObject* WorldContextObject) {
+		return static_cast<AGameplayGameMode*>(WorldContextObject->GetWorld()->GetAuthGameMode());
+	}
+	
+	UFUNCTION(BlueprintPure, Category="Helper Functions")
+	static AActor* FindPlayerStart(const UObject* WorldContextObject, APlayerController* PlayerController) {
+		return WorldContextObject->GetWorld()->GetAuthGameMode()->FindPlayerStart(PlayerController);
 	}
 };

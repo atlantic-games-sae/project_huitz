@@ -5,9 +5,14 @@
 
 ACustomCharacterBase::ACustomCharacterBase(const FObjectInitializer& ObjectInitializer) {
 	PrimaryActorTick.bCanEverTick = true;
-	// GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	MaxHealth = 50.0f;
+}
+
+void ACustomCharacterBase::BeginPlay() {
+	Super::BeginPlay();
+	
 	CurrentHealth = MaxHealth;
 }
 

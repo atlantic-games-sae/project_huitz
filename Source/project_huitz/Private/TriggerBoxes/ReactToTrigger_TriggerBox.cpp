@@ -13,7 +13,9 @@ void AReactToTrigger_TriggerBox::BeginPlay() {
 
 void AReactToTrigger_TriggerBox::OnCollisionComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 	if (OtherActor->IsA(APlayerCharacter::StaticClass())) {
-		IReactToTrigger::Execute_OnTrigger(ActorToTrigger);
+		for (AActor* ActorToTrigger : ActorsToTrigger) {
+			IReactToTrigger::Execute_OnTrigger(ActorToTrigger);
+		}
 		Destroy();
 	}
 }

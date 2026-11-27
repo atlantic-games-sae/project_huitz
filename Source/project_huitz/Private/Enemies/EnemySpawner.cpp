@@ -17,22 +17,19 @@ void AEnemySpawner::SpawnEnemy() {
 
 	float EnemyHalfHeight = EnemyType.GetDefaultObject()->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	ABaseEnemy* NewEnemy = GetWorld()->SpawnActor<ABaseEnemy>(EnemyType, GetActorLocation() + FVector(0, 0, EnemyHalfHeight), GetActorRotation(), SpawnParams);
-	NewEnemy->OnPawnBeginPlay.AddUObject(this, &AEnemySpawner::OnEnemySpawned);
-}
-
-void AEnemySpawner::OnEnemySpawned(APawn* SpawnedPawn) {
-	SpawnedPawn->OnDestroyed.AddUniqueDynamic(this, &AEnemySpawner::OnEnemyDestroyed);
-	ABaseEnemy* AsEnemy = Cast<ABaseEnemy>(SpawnedPawn);
-	ActiveEnemies.AddUnique(AsEnemy);
-	SpawnedPawn->OnPawnBeginPlay.RemoveAll(this);
+	ABaseEnemy* NewEnemy = GetWorld()->SpawnActor<ABaseEnemy>(EnemyType, GetActorLocation() + FVector(0, 0, EnemyHalfHeight), GetActorRotation());
+	
+	if (!IsValid(NewEnemy)) return;
+	ActiveEnemies.AddUnique(NewEnemy);
+	
+	NewEnemy->OnDestroyed.AddUniqueDynamic(this, &AEnemySpawner::OnEnemyDestroyed);
 }
 
 void AEnemySpawner::OnEnemyDestroyed(AActor* DestroyedActor) {
 	if (ABaseEnemy* AsEnemy = Cast<ABaseEnemy>(DestroyedActor)) {
 		ActiveEnemies.Remove(AsEnemy);
+		
+		if (ActiveEnemies.Num() == 0) OnAllEnemiesDestroyedDelegate.Broadcast();
 	}
 }
 

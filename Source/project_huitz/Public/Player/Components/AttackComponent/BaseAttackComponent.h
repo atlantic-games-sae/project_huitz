@@ -34,9 +34,12 @@ public:
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UWeapon* GetActiveWeapon() {
-		return ActiveWeapon;
-	}
+	UWeapon* GetActiveWeapon() const { return ActiveWeapon; }
+	
+	TArray<TSubclassOf<UWeapon>> GetOwnedWeapons() const { return OwnedWeapons; }
+	
+	UFUNCTION(BlueprintCallable, Category="Weapons")
+	void GiveNewWeapon(TSubclassOf<UWeapon> NewWeapon, bool bShouldEquipWeapon);
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="Weapons")
@@ -44,9 +47,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapons")
 	TArray<TSubclassOf<UWeapon>> OwnedWeapons;
-
-	UFUNCTION(BlueprintCallable, Category="Weapons")
-	void GiveNewWeapon(TSubclassOf<UWeapon> NewWeapon, bool bShouldEquipWeapon);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bDebugAttackTraces;

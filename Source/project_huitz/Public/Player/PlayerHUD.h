@@ -28,6 +28,12 @@ public:
 
 	UFUNCTION()
 	void OnAttackCooldownUpdated(float Value);
+	
+	UFUNCTION()
+	void OnCurrentStaminaChanged(float Value);
+	
+	UFUNCTION()
+	void OnMaxStaminaChanged(int Value);
 
 protected:
 	UPROPERTY(BlueprintReadOnly)
@@ -53,6 +59,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	float AttackCooldownProgress;
+	
+	UPROPERTY(BlueprintReadOnly)
+	float CurrentStamina;
+	
+	UPROPERTY(BlueprintReadOnly)
+	int MaxStamina;
 
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnCurrentAmmoChanged")
 	void OnCurrentAmmoChanged_Event();
@@ -65,4 +77,10 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnAttackCooldownUpdated")
 	void OnAttackCooldownUpdated_Event();
+	
+	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnCurrentStaminaChanged")
+	void OnCurrentStaminaChanged_Event();
+	
+	UFUNCTION(BlueprintImplementableEvent, DisplayName="OnMaxStaminaChanged")
+	void OnMaxStaminaChanged_Event();
 };
